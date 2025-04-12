@@ -1,0 +1,369 @@
+<!-- ADDED LASERS THAT APPEAR AFTER SCORE >= 20 -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Keep the Balloon Up — Laser Edition (No Smoothing)</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #87CEEB;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    #message {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      padding: 8px 16px;
+      font-size: 24px;
+      font-family: sans-serif;
+      color: white;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="message">Score: 0</div>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+
+  <!-- TensorFlow & MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+
+    let balloon = {
+      x: 300,
+      y: 100,
+      radius: 25,
+      vx: 0,
+      vy: 0
+    };
+
+    let gravity = 0.2;
+    let drag = 0.99;
+    let score = 0;
+    let gameOver = false;
+    let gameStarted = false;
+    let startDelay = 2000;
+
+    let spikes = [];
+    let spikeTimer = 0;
+    let spikeInterval = 2000;
+
+    let lasers = [];
+    let laserTimer = 0;
+    let laserInterval = 5000;
+
+    let lastFinger = { x: null, y: null };
+    let fingerVelocity = { x: 0, y: 0 };
+
+    async function setupCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 }
+      });
+      video.srcObject = stream;
+      return new Promise(resolve => {
+        video.onloadedmetadata = () => resolve(video);
+      });
+    }
+
+    function resetGame() {
+      balloon.x = canvas.width / 2;
+      balloon.y = 100;
+      balloon.vx = 0;
+      balloon.vy = 0;
+      score = 0;
+      gameOver = false;
+      gameStarted = false;
+      spikes = [];
+      spikeTimer = 0;
+      lasers = [];
+      laserTimer = 0;
+      message.innerText = "Get Ready...";
+      lastFinger = { x: null, y: null };
+      fingerVelocity = { x: 0, y: 0 };
+      setTimeout(() => {
+        gameStarted = true;
+        message.innerText = "Score: 0";
+      }, startDelay);
+    }
+
+    function spawnSpike() {
+      const fromLeft = Math.random() < 0.5;
+      const startX = fromLeft ? -30 : canvas.width + 30;
+      const targetX = fromLeft ? canvas.width + 100 : -100;
+      const dx = targetX - startX;
+
+      const vertexX = startX + dx * (0.3 + Math.random() * 0.4);
+      const vertexY = Math.random() * (canvas.height / 3);
+      const startY = Math.random() * (canvas.height / 2);
+
+      const timeToVertex = 100 + Math.random() * 100;
+      const vx = (vertexX - startX) / timeToVertex;
+      const vy = (vertexY - startY) / timeToVertex;
+
+      const totalTime = 300 + Math.random() * 150;
+      const gravity = (2 * (canvas.height - vertexY)) / (totalTime * totalTime);
+
+      const drag = 0.996 + Math.random() * 0.002;
+
+      spikes.push({
+        x: startX,
+        y: startY,
+        radius: 20,
+        vx: vx,
+        vy: vy,
+        gravity: gravity,
+        drag: drag
+      });
+    }
+
+    function spawnLaser() {
+      const isHorizontal = Math.random() < 0.5;
+      const warningDuration = 1000;
+      const firingDuration = 500;
+
+      const position = isHorizontal
+        ? Math.random() * canvas.height
+        : Math.random() * canvas.width;
+
+      lasers.push({
+        isHorizontal,
+        position,
+        state: 'warning',
+        timer: warningDuration,
+        firingDuration
+      });
+    }
+
+    function drawSpike(spike) {
+      ctx.beginPath();
+      ctx.arc(spike.x, spike.y, spike.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = "red";
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function drawLaser(laser) {
+      ctx.save();
+      ctx.strokeStyle = laser.state === 'warning' ? 'yellow' : 'red';
+      ctx.lineWidth = laser.state === 'warning' ? 4 : 8;
+      ctx.beginPath();
+
+      if (laser.isHorizontal) {
+        ctx.moveTo(0, laser.position);
+        ctx.lineTo(canvas.width, laser.position);
+      } else {
+        ctx.moveTo(laser.position, 0);
+        ctx.lineTo(laser.position, canvas.height);
+      }
+
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    async function main() {
+      await setupCamera();
+      await video.play();
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const detector = await handPoseDetection.createDetector(
+        handPoseDetection.SupportedModels.MediaPipeHands,
+        {
+          runtime: 'mediapipe',
+          modelType: 'lite',
+          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands'
+        }
+      );
+
+      async function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        // Draw balloon
+        ctx.beginPath();
+        ctx.arc(balloon.x, balloon.y, balloon.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'hotpink';
+        ctx.fill();
+        ctx.stroke();
+
+        const hands = await detector.estimateHands(video, { flipHorizontal: true });
+
+        if (hands.length > 0) {
+          const hand = hands[0];
+          const tip = hand.keypoints.find(p => p.name === 'index_finger_tip');
+
+          if (tip) {
+            const x = tip.x;
+            const y = tip.y;
+
+            // Calculate finger velocity
+            if (lastFinger.x !== null && lastFinger.y !== null) {
+              fingerVelocity.x = x - lastFinger.x;
+              fingerVelocity.y = y - lastFinger.y;
+            }
+
+            lastFinger.x = x;
+            lastFinger.y = y;
+
+            // Draw raw finger tracker
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = 'cyan';
+            ctx.fill();
+
+            // Balloon collision
+            const dx = x - balloon.x;
+            const dy = y - balloon.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (!gameOver && gameStarted && dist < balloon.radius + 10 && balloon.vy > 0) {
+              const angle = Math.atan2(dy, dx);
+              const fingerSpeed = Math.sqrt(fingerVelocity.x ** 2 + fingerVelocity.y ** 2);
+              const speedFactor = Math.max(Math.min(fingerSpeed * 0.15, 15), 8);
+
+              balloon.vx = -Math.cos(angle) * speedFactor;
+              balloon.vy = -Math.sin(angle) * speedFactor;
+
+              score++;
+              message.innerText = `Score: ${score}`;
+
+              if (score === 10) {
+                message.innerText = "Score: 10 — Spikes incoming!";
+              }
+              if (score === 15) {
+                message.innerText = "Score: 15 — Watch out for lasers!";
+              }
+            }
+          }
+        }
+
+        if (!gameOver && gameStarted) {
+          // Balloon physics
+          balloon.vy += gravity;
+          balloon.vx *= drag;
+          balloon.vy *= drag;
+
+          balloon.x += balloon.vx;
+          balloon.y += balloon.vy;
+
+          if (balloon.x - balloon.radius < 0 || balloon.x + balloon.radius > canvas.width) {
+            balloon.vx = -balloon.vx * 0.8;
+            balloon.x = Math.max(balloon.radius, Math.min(canvas.width - balloon.radius, balloon.x));
+          }
+
+          if (balloon.y - balloon.radius > canvas.height) {
+            gameOver = true;
+            message.innerText = `You dropped it! Final Score: ${score} — Tap to restart`;
+          }
+
+          // Spikes
+          spikeTimer += 16;
+          if (score >= 10 && spikeTimer > spikeInterval) {
+            spawnSpike();
+            spikeTimer = 0;
+          }
+
+          spikes.forEach(spike => {
+            spike.vy += spike.gravity;
+            spike.vx *= spike.drag;
+            spike.vy *= spike.drag;
+
+            spike.x += spike.vx;
+            spike.y += spike.vy;
+
+            drawSpike(spike);
+
+            const dx = spike.x - balloon.x;
+            const dy = spike.y - balloon.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < balloon.radius + spike.radius) {
+              gameOver = true;
+              message.innerText = `Balloon popped! Final Score: ${score} — Tap to restart`;
+            }
+          });
+
+          spikes = spikes.filter(s => s.x > -50 && s.x < canvas.width + 50 && s.y < canvas.height + 50);
+
+          // Lasers
+          laserTimer += 16;
+          if (score >= 20 && laserTimer > laserInterval) {
+            spawnLaser();
+            laserTimer = 0;
+          }
+
+          lasers.forEach(laser => {
+            laser.timer -= 16;
+
+            if (laser.timer <= 0) {
+              if (laser.state === 'warning') {
+                laser.state = 'firing';
+                laser.timer = laser.firingDuration;
+              } else if (laser.state === 'firing') {
+                laser.state = 'done';
+              }
+            }
+
+            if (laser.state !== 'done') {
+              drawLaser(laser);
+            }
+
+            if (laser.state === 'firing') {
+              if (laser.isHorizontal) {
+                if (Math.abs(balloon.y - laser.position) < balloon.radius) {
+                  gameOver = true;
+                  message.innerText = `Laser hit! Final Score: ${score} — Tap to restart`;
+                }
+              } else {
+                if (Math.abs(balloon.x - laser.position) < balloon.radius) {
+                  gameOver = true;
+                  message.innerText = `Laser hit! Final Score: ${score} — Tap to restart`;
+                }
+              }
+            }
+          });
+
+          lasers = lasers.filter(laser => laser.state !== 'done');
+        }
+
+        requestAnimationFrame(render);
+      }
+
+      canvas.addEventListener('click', () => {
+        if (gameOver) resetGame();
+      });
+
+      resetGame();
+      render();
+    }
+
+    main();
+  </script>
+</body>
+</html>

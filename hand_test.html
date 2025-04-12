@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Pointer Finger Tracking (MediaPipe)</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      video {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+    <!-- Load hand pose detection with MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+    <script>
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      async function setupCamera() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480 },
+          audio: false
+        });
+        video.srcObject = stream;
+        return new Promise(resolve => {
+          video.onloadedmetadata = () => {
+            resolve(video);
+          };
+        });
+      }
+
+      async function main() {
+        await setupCamera();
+        await video.play();
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const detector = await handPoseDetection.createDetector(
+          handPoseDetection.SupportedModels.MediaPipeHands, {
+            runtime: 'mediapipe',
+            modelType: 'lite',
+            solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands'
+          }
+        );
+
+        async function render() {
+          const hands = await detector.estimateHands(video, { flipHorizontal: true });
+
+          //ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          ctx.save();
+          ctx.scale(-1, 1); // Flip horizontally
+          ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+          ctx.restore();
+
+          for (const hand of hands) {
+            const landmarks = hand.keypoints;
+
+            // Draw only the index finger tip (landmark index 8)
+            const indexTip = landmarks.find(l => l.name === 'index_finger_tip');
+            if (indexTip) {
+              ctx.beginPath();
+              ctx.arc(indexTip.x, indexTip.y, 10, 0, 2 * Math.PI);
+              ctx.fillStyle = 'cyan';
+              ctx.fill();
+            }
+
+            // Optionally draw all keypoints
+            for (const point of landmarks) {
+               ctx.beginPath();
+               ctx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
+               ctx.fillStyle = 'red';
+               ctx.fill();
+            }
+          }
+
+          requestAnimationFrame(render);
+        }
+
+        render();
+      }
+
+      main();
+    </script>
+  </body>
+</html>

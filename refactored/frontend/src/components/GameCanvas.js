@@ -40,42 +40,45 @@ function GameCanvas() {
       });
       await videoElement.play();
 
-      const renderLoop = (video) => {
+      const renderLoop = () => {
         const now = videoElement.currentTime;
         const handLandmarker = handLandmarkerRef.current;
 
         if (
-          video &&
+          videoElement &&
           handLandmarker &&
-          video.videoWidth > 0 &&
-          video.videoHeight > 0 &&
+          videoElement.videoWidth > 0 &&
+          videoElement.videoHeight > 0 &&
           now !== lastVideoTimeRef.current
         ) {
           const results = handLandmarker.detectForVideo(videoElement, performance.now());
+          canvasCtx.save();
           canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
           canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-          if (results.landmarks) {
-            // for (const landmarks of results.landmarks) {
-            //   drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
-            //     color: '#00FF00',
-            //     lineWidth: 5,
-            //   });
-            //   drawLandmarks(canvasCtx, landmarks, {
-            //     color: '#FF0000',
-            //     lineWidth: 2,
-            //   });
-            // }
-            console.log(results.landmarks);
+          if (results.landmarks && results.landmarks[0]) {
+            let tip = results.landmarks[0][8];
+            let tipCoords = {
+              x: tip.x * canvasElement.width,
+              y: tip.y * canvasElement.height,
+            };
+            canvasCtx.beginPath();
+            canvasCtx.arc(tipCoords.x, tipCoords.y, 10, 0, 2 * Math.PI);
+            canvasCtx.fillStyle = 'red';
+            canvasCtx.fill();
+            canvasCtx.strokeStyle = 'red';
+            canvasCtx.stroke();
+            canvasCtx.closePath();
+            console.log(tip);
           }
 
           lastVideoTimeRef.current = now;
         }
 
-        requestAnimationFrame(() => renderLoop(videoElement));
+        requestAnimationFrame(() => renderLoop());
       };
 
-      renderLoop(videoElement);
+      renderLoop();
     };
 
     initialize();

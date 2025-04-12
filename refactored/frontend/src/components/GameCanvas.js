@@ -8,11 +8,12 @@ function GameCanvas() {
   const handLandmarkerRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
 
-  const [ballPos, setBallPos] = React.useState({ x: 320, y: 240 });
-  const [ballVelocity, setBallVelocity] = React.useState({ dx: 2, dy: -2 });
   const [fingerPos, setFingerPos] = React.useState({ x: 0, y: 0 });
   const [fingerVelocity, setFingerVelocity] = React.useState({ dx: 0, dy: 0 });
   
+  const ballRef = useRef({ x: 320, y: 240, vx: 2, vy: -2 });
+  const [renderBall, setRenderBall] = React.useState({ x: 320, y: 240 });
+
   useEffect(() => {
     const initialize = async () => {
       const videoElement = videoRef.current;
@@ -80,6 +81,36 @@ function GameCanvas() {
           lastVideoTimeRef.current = now;
         }
 
+        // Ball movement
+        // Ball physics using ref
+      let { x, y, vx, vy } = ballRef.current;
+      x += vx;
+      y += vy;
+      vy += 0.1; // gravity
+
+      if (x < 25 || x > window.innerWidth - 25) vx *= -1;
+      if (y < 25 || y > window.innerHeight - 25) vy *= -0.8;
+      console.log('hot reload test');
+      if (fingerPos) {
+        const dx = fingerPos.x - x;
+        const dy = fingerPos.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 35) {
+          const angle = Math.atan2(dy, dx);
+          const speed = 8;
+          vx = -Math.cos(angle) * speed;
+          vy = -Math.sin(angle) * speed;
+        }
+      }
+
+      ballRef.current = {
+        x: Math.max(25, Math.min(window.innerWidth - 25, x)),
+        y: Math.max(25, Math.min(window.innerHeight - 25, y)),
+        vx,
+        vy,
+      };
+
+      setRenderBall({ x: ballRef.current.x, y: ballRef.current.y });
         requestAnimationFrame(() => renderLoop());
       };
 
@@ -122,7 +153,7 @@ function GameCanvas() {
           zIndex: 0,
         }}
       />
-      <BallObject x={ballPos.x} y={ballPos.y} />
+      <BallObject x={renderBall.x} y={renderBall.y} />
     </>
   );
 }

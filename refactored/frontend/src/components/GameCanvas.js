@@ -69,7 +69,7 @@ function GameCanvas() {
             canvasCtx.strokeStyle = 'red';
             canvasCtx.stroke();
             canvasCtx.closePath();
-            console.log(tip);
+            // console.log(tip);
           }
 
           lastVideoTimeRef.current = now;

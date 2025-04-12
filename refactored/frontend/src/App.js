@@ -14,17 +14,17 @@ function App() {
   let content;
   if (gameStatus === "start-screen") {
     content = (
-      <StartScreen 
+      <StartScreen
         setGameStatus={setGameStatus}
       />
     );
   } else if (gameStatus === "game-screen") {
     content = (
       <>
-      <GameCanvas 
-        setGameStatus={setGameStatus}
-      />
-      <ScoreMessage />
+        <GameCanvas
+          setGameStatus={setGameStatus}
+        />
+        <ScoreMessage />
       </>
     );
   } else {

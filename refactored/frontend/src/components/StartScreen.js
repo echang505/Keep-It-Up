@@ -18,6 +18,8 @@ function StartScreen({setGameStatus}) {
       <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>KEEP IT UP!</h1>
 
       <button
+        onClick={() => {
+            setGameStatus("game-screen");}}
         style={{
           fontSize: '2rem',
           padding: '10px 30px',
@@ -32,6 +34,7 @@ function StartScreen({setGameStatus}) {
       </button>
 
       <button
+        onClick={() => setGameStatus("scores-screen")}
         style={{
           fontSize: '2rem',
           padding: '10px 30px',
@@ -45,6 +48,7 @@ function StartScreen({setGameStatus}) {
       </button>
 
       <button
+        onClick={() => setGameStatus("settings-screen")}
         style={{
           fontSize: '2rem',
           padding: '10px 30px',

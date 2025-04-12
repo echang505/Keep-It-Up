@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
-import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
-import { HAND_CONNECTIONS } from '@mediapipe/hands';
+import BallObject from './BallObject';
 
 function GameCanvas() {
   const videoRef = useRef(null);
@@ -9,6 +8,11 @@ function GameCanvas() {
   const handLandmarkerRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
 
+  const [ballPos, setBallPos] = React.useState({ x: 320, y: 240 });
+  const [ballVelocity, setBallVelocity] = React.useState({ dx: 2, dy: -2 });
+  const [fingerPos, setFingerPos] = React.useState({ x: 0, y: 0 });
+  const [fingerVelocity, setFingerVelocity] = React.useState({ dx: 0, dy: 0 });
+  
   useEffect(() => {
     const initialize = async () => {
       const videoElement = videoRef.current;
@@ -32,7 +36,7 @@ function GameCanvas() {
       handLandmarkerRef.current = handLandmarker;
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: { width: window.innerWidth, height: window.innerHeight },
       });
       videoElement.srcObject = stream;
       await new Promise((resolve) => {
@@ -57,7 +61,7 @@ function GameCanvas() {
           canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
           if (results.landmarks && results.landmarks[0]) {
-            let tip = results.landmarks[0][8];
+            let tip = results.landmarks[0][8]; // change to thumb??
             let tipCoords = {
               x: tip.x * canvasElement.width,
               y: tip.y * canvasElement.height,
@@ -70,8 +74,9 @@ function GameCanvas() {
             canvasCtx.stroke();
             canvasCtx.closePath();
             // console.log(tip);
-          }
 
+            setFingerPos(tipCoords);
+          }
           lastVideoTimeRef.current = now;
         }
 
@@ -92,20 +97,32 @@ function GameCanvas() {
         autoPlay
         playsInline
         muted
-        style={{ display: 'none' }}
+        style={{ 
+          display: 'none', 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          objectFit: 'cover',
+          zIndex: -1,
+        }}
       />
       <canvas
         id="canvas"
         ref={canvasRef}
-        width={640}
-        height={480}
+        width={window.innerWidth}
+        height={window.innerHeight}
         style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
+          width: '100vw',
+          height: '100vh',
           zIndex: 0,
         }}
       />
+      <BallObject x={ballPos.x} y={ballPos.y} />
     </>
   );
 }

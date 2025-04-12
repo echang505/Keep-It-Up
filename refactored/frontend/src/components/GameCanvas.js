@@ -1,51 +1,84 @@
 import React, { useRef, useEffect } from 'react';
-import { Camera } from '@mediapipe/camera_utils';
+import * as vision from "@mediapipe/tasks-vision";
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
-import { Hands, HAND_CONNECTIONS, Results } from '@mediapipe/hands';
+import { HAND_CONNECTIONS } from '@mediapipe/hands';
 
 function GameCanvas() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const handLandmarkerRef = useRef(null);
+  const lastVideoTimeRef = useRef(-1);
 
   useEffect(() => {
-    const videoElement = videoRef.current;
-    const canvasElement = canvasRef.current;
-    const canvasCtx = canvasElement.getContext('2d');
+    const initialize = async () => {
+      const videoElement = videoRef.current;
+      const canvasElement = canvasRef.current;
+      const canvasCtx = canvasElement.getContext('2d');
 
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-    });
+      const filesetResolver = await vision.FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+      );
 
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.7,
-      minTrackingConfidence: 0.5
-    });
-
-    hands.onResults((results) => {
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-      if (results.multiHandLandmarks) {
-        for (const landmarks of results.multiHandLandmarks) {
-          drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 5 });
-          drawLandmarks(canvasCtx, landmarks, { color: '#FF0000', lineWidth: 2 });
-        }
-      }
-      canvasCtx.restore();
-    });
-
-    if (typeof videoElement !== 'undefined' && videoElement !== null) {
-      const camera = new Camera(videoElement, {
-        onFrame: async () => {
-          await hands.send({ image: videoElement });
+      const handLandmarker = await vision.HandLandmarker.createFromOptions(filesetResolver , {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+          delegate: 'GPU',
         },
-        width: 640,
-        height: 480
+        runningMode: "VIDEO",
+        numHands: 2,
       });
-      camera.start();
-    }
+
+      handLandmarkerRef.current = handLandmarker;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+      });
+      videoElement.srcObject = stream;
+      await new Promise((resolve) => {
+        videoElement.onloadedmetadata = () => resolve();
+      });
+      await videoElement.play();
+
+      const renderLoop = (video) => {
+        const now = videoElement.currentTime;
+        const handLandmarker = handLandmarkerRef.current;
+
+        if (
+          video &&
+          handLandmarker &&
+          video.videoWidth > 0 &&
+          video.videoHeight > 0 &&
+          now !== lastVideoTimeRef.current
+        ) {
+          const results = handLandmarker.detectForVideo(videoElement, performance.now());
+          canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+          canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+          if (results.landmarks) {
+            // for (const landmarks of results.landmarks) {
+            //   drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+            //     color: '#00FF00',
+            //     lineWidth: 5,
+            //   });
+            //   drawLandmarks(canvasCtx, landmarks, {
+            //     color: '#FF0000',
+            //     lineWidth: 2,
+            //   });
+            // }
+            console.log(results.landmarks);
+          }
+
+          lastVideoTimeRef.current = now;
+        }
+
+        requestAnimationFrame(() => renderLoop(videoElement));
+      };
+
+      renderLoop(videoElement);
+    };
+
+    initialize();
   }, []);
 
   return (
@@ -69,7 +102,7 @@ function GameCanvas() {
           left: 0,
           zIndex: 0,
         }}
-      ></canvas>
+      />
     </>
   );
 }

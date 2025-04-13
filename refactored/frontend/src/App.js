@@ -9,7 +9,7 @@ function App() {
   // "scores-screen": scores screen
   // "settings-screen": settings screen
   // "game-over-screen": game over screen
-  const [gameStatus, setGameStatus] = React.useState("game-over-screen");
+  const [gameStatus, setGameStatus] = React.useState("start-screen");
   
   let content;
   if (gameStatus === "start-screen") {

@@ -4,6 +4,7 @@ import leaderboard2 from '../assets/sprites/leaderboard2.png';
 import backSprite1 from '../assets/sprites/back1.png';
 import backSprite2 from '../assets/sprites/back2.png';
 import bliss from '../assets/sprites/bliss.png';
+import clickSound from '../assets/sprites/minecraft_click.mp3'; // Import the sound file
 
 
 function Scoreboard({setGameStatus}) {
@@ -72,10 +73,16 @@ function Scoreboard({setGameStatus}) {
       }, 500);
       return () => clearInterval(interval);
     }, []);
+
+    const handleClick = () => {
+        const audio = new Audio(clickSound); // Create a new Audio instance
+        audio.play(); // Play the sound
+        onClick(); // Trigger the button's onClick handler
+      };
   
     return (
       <button
-        onClick={onClick}
+        onClick={handleClick}
         style={{
           width: '400px',
           height: '140px',

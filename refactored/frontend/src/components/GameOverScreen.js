@@ -11,6 +11,8 @@ import playAgainSprite1 from '../assets/sprites/playagain.png';
 import playAgainSprite2 from '../assets/sprites/playagain2.png';
 import mainMenu1 from '../assets/sprites/mainmenu.png';
 import mainMenu2 from '../assets/sprites/mainmenu2.png';
+import clickSound from '../assets/sprites/minecraft_click.mp3'; 
+
 
 function SpriteImage({ frames, width = 200, height = 80 }) {
   const [frame, setFrame] = useState(0);
@@ -47,10 +49,17 @@ function SpriteButton({ onClick, text, frames }) {
     }, 500);
     return () => clearInterval(interval);
   }, []);
+  
+  const handleClick = () => {
+    const audio = new Audio(clickSound); // Create a new Audio instance
+    audio.play(); // Play the sound
+    onClick(); // Trigger the button's onClick handler
+  };
+
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       style={{
         width: '300px',
         height: '100px',
@@ -193,7 +202,12 @@ function GameOverScreen({ setGameStatus, score }) {
                 {showSaveForm && (
                     <SaveScoreForm 
                         score={score} 
-                        onClose={() => setShowSaveForm(false)} 
+                        onClose={() => {setShowSaveForm(false);
+                            const audio = new Audio(clickSound); // Create a new Audio instance
+                            audio.play();
+                        }
+
+                        } 
                     />
                 )}
             </div>

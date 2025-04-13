@@ -16,45 +16,7 @@ function Scoreboard({setGameStatus}) {
     { name: "Super Wizard", score: 980 },
     { name: "Pro Gamer", score: 950 },
     { name: "Super Legend", score: 950 },
-    { name: "Elite Player", score: 920 },
-    { name: "Elite Master", score: 900 },
-    { name: "Bounce King", score: 890 },
-    { name: "Elite Wizard", score: 850 },
-    { name: "Elite Legend", score: 830 },
-    { name: "Top Scorer", score: 800 },
-    { name: "Top Master", score: 750 },
-    { name: "Top Wizard", score: 700 },
-    { name: "Top Legend", score: 680 },
-    { name: "Ball Master", score: 780 },
-    { name: "Score Wizard", score: 680 },
-    { name: "Score Elite", score: 600 },
-    { name: "Score Legend", score: 580 },
-    { name: "Finger Ninja", score: 580 },
-    { name: "Score Super", score: 570 },
-    { name: "Game Legend", score: 550 },
-    { name: "Keep It Up Expert", score: 650 },
-    { name: "Game Elite", score: 500 },
-    { name: "Game Super", score: 470 },
-    { name: "Ball Wizard", score: 450 },
-    { name: "Ball Elite", score: 400 },
-    { name: "Ball Legend", score: 380 },
-    { name: "Ball Bouncer", score: 420 },
-    { name: "New Player", score: 320 },
-    { name: "High Scorer", score: 300 },
-    { name: "Score Hero", score: 300 },
-    { name: "Score Legend", score: 280 },
-    { name: "Game Hero", score: 250 },
-    { name: "Game Master", score: 200 },
-    { name: "Arcade Legend", score: 200 },
-    { name: "Game Legend", score: 210 },
-    { name: "Arcade Pro", score: 180 },
-    { name: "Arcade Wizard", score: 190 },
-    { name: "Game Wizard", score: 220 },
-    { name: "First Timer", score: 150 },
-    { name: "Casual Master", score: 150 },
-    { name: "Casual Player", score: 120 },
-    { name: "Casual Wizard", score: 130 },
-    { name: "Casual Legend", score: 110 }
+    { name: "Elite Player", score: 920 }
   ];
 
   const [scores, setScores] = useState([]);
@@ -69,7 +31,7 @@ function Scoreboard({setGameStatus}) {
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        setPage(prevPage => prevPage + 1);
+        setPage(prev => prev + 1);
       }
     });
     if (node) observer.current.observe(node);
@@ -134,50 +96,35 @@ function Scoreboard({setGameStatus}) {
   }
   
 
-  // Simulate fetching scores with dummy data
-  const fetchScores = (pageNum) => {
-    try {
-      setLoading(true);
-      
-      // Simulate network delay
-      setTimeout(() => {
-        const perPage = 10;
-        const startIdx = (pageNum - 1) * perPage;
-        const endIdx = Math.min(startIdx + perPage, dummyScores.length);
-        
-        // Get slice of dummy scores for this page
-        const newScores = dummyScores.slice(startIdx, endIdx);
-        
-        if (pageNum === 1) {
-          setScores(newScores);
-        } else {
-          setScores(prevScores => [...prevScores, ...newScores]);
-        }
-        
-        setTotalScores(dummyScores.length);
-        setHasMore(pageNum * perPage < dummyScores.length);
-        setLoading(false);
-      }, 500); // Simulate 500ms delay
-      
-    } catch (err) {
-      console.error('Error with dummy data:', err);
-      setError('Failed to load scores. Please try again later.');
+ // Fetch leaderboard scores from backend
+ const fetchScores = async (pageNum) => {
+  setLoading(true);
+  await fetch(`http://localhost:5001/get/leaderboard?page=${pageNum}&per_page=10`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setScores(prev => [...prev, ...data.scores]);
+      setHasMore(pageNum < data.total_pages);
       setLoading(false);
-    }
-  };
+    })
+    .catch(err => {
+      console.error('Error fetching scores:', err);
+      setError('Failed to load scores.');
+      setLoading(false);
+    });
+};
 
-  useEffect(() => {
-    fetchScores(page);
-    
-    // Lock scrolling when component mounts
-    document.body.style.overflow = 'hidden';
-    
-    // Cleanup function to restore scrolling when component unmounts
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [page]);
-
+useEffect(() => {
+  // Fetch once on mount
+  fetch('/get/leaderboard')
+    .then(res => res.json())
+    .then(data => {
+      setScores(data.scores);
+      setLoading(false);
+    });
+}, []);
   return (
     <div
       style={{

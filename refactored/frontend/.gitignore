@@ -21,7 +21,4 @@ yarn-error.log*
 
 yarn.lock
 
-/backend/3.11venv/bin/.
-/backend/3.11venv/include/.
-/backend/3.11venv/lib/.
-/backend/3.11venv/lib64/.
+/backend/3.11venv/

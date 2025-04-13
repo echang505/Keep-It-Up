@@ -2,7 +2,11 @@ import React from 'react';
 import GameCanvas from './components/GameCanvas';
 import ScoreMessage from './components/ScoreMessage';
 import StartScreen from './components/StartScreen';
+import Scoreboard from './components/Scoreboard';
+import Settings from './components/Settings';
 import GameOverScreen from './components/GameOverScreen';
+
+
 function App() {
   // "start-screen": start screen
   // "game-screen": playing game
@@ -36,6 +40,18 @@ function App() {
           setGameStatus={setGameStatus}
           />
       </>
+    );
+  } else if (gameStatus === "scores-screen") {
+    content = (
+      <Scoreboard
+        setGameStatus={setGameStatus}
+      />
+    );
+  } else if (gameStatus === "settings-screen") {
+    content = (
+      <Settings
+        setGameStatus={setGameStatus}
+      />
     );
   } else {
     content = <>Testing</>;

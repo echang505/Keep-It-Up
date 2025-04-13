@@ -3,6 +3,7 @@ import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
 import BombObject from './BombObject';
 import BonusPointObject from './BonusPointObject';
+import LaserObject from './LaserObject';
 import './GameCanvas.css';
 import boing from '../assets/sprites/boing.mp3';
 import { useAudio } from '../context/AudioContext';
@@ -44,6 +45,11 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const bonusPointTimerRef = useRef(0);
   const bonusPointInterval = 5000; // Spawn a bonus point every 5 seconds
   
+  // Add laser state
+  const [lasers, setLasers] = useState([]);
+  const laserTimerRef = useRef(0);
+  const laserInterval = 5000; // Spawn a laser every 5 seconds
+  
   // Countdown effect
   useEffect(() => {
     if (countdown > 0) {
@@ -72,6 +78,8 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     setGameStarted(false);
     setBonusPoints([]);
     bonusPointTimerRef.current = 0;
+    setLasers([]);
+    laserTimerRef.current = 0;
   }, []);
 
   // Function to spawn a new bomb
@@ -167,6 +175,25 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     };
     
     setBonusPoints(prev => [...prev, newBonusPoint]);
+  };
+
+  // Function to spawn a new laser
+  const spawnLaser = () => {
+    const isHorizontal = Math.random() < 0.5;
+    const position = isHorizontal
+      ? Math.random() * window.innerHeight
+      : Math.random() * window.innerWidth;
+
+    const newLaser = {
+      id: Date.now(),
+      isHorizontal,
+      position,
+      state: 'warning',
+      timer: 1000, // 1 second warning
+      firingDuration: 500, // 0.5 seconds firing
+    };
+
+    setLasers(prev => [...prev, newLaser]);
   };
 
   useEffect(() => {
@@ -433,6 +460,47 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             bonusPointTimerRef.current = 0;
           }
           
+          // Update lasers
+          setLasers(prev => {
+            return prev.map(laser => {
+              laser.timer -= 16; // Assuming 60fps
+
+              if (laser.timer <= 0) {
+                if (laser.state === 'warning') {
+                  laser.state = 'firing';
+                  laser.timer = laser.firingDuration;
+                } else if (laser.state === 'firing') {
+                  return null; // Remove laser after firing
+                }
+              }
+
+              // Check collision with balloon during firing state
+              if (laser.state === 'firing') {
+                const ballRadius = 25;
+                if (laser.isHorizontal) {
+                  if (Math.abs(ballRef.current.y - laser.position) < ballRadius) {
+                    setGameStatus("game-over-screen");
+                    return null;
+                  }
+                } else {
+                  if (Math.abs(ballRef.current.x - laser.position) < ballRadius) {
+                    setGameStatus("game-over-screen");
+                    return null;
+                  }
+                }
+              }
+
+              return laser;
+            }).filter(laser => laser !== null);
+          });
+          
+          // Spawn lasers periodically
+          laserTimerRef.current += 16; // Assuming 60fps
+          if (currentScoreRef.current >= 10 && laserTimerRef.current >= laserInterval) {
+            spawnLaser();
+            laserTimerRef.current = 0;
+          }
+          
           // end game
           if (y > window.innerHeight) {
             console.log("ENDING GAME", y);
@@ -441,7 +509,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           }
         }
         
-        requestAnimationFrame(() => renderLoop());
+        requestAnimationFrame(renderLoop);
       };
 
       renderLoop();
@@ -500,6 +568,14 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           key={bonusPoint.id}
           x={bonusPoint.x}
           y={bonusPoint.y}
+        />
+      ))}
+      {lasers.map(laser => (
+        <LaserObject
+          key={laser.id}
+          isHorizontal={laser.isHorizontal}
+          position={laser.position}
+          state={laser.state}
         />
       ))}
       {!gameStarted && (

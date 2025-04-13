@@ -203,14 +203,15 @@ function Scoreboard({setGameStatus}) {
         style={{
           width: '80%',
           maxWidth: '600px',
-          maxHeight: '60vh',
+          height: '60vh',
           margin: '2rem',
           padding: '1rem',
           borderRadius: '10px',
           border: '5px solid black',
           background: 'white',
           overflowY: 'auto',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          position: 'relative'
         }}
       >
         {error ? (

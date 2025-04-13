@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import bliss from '../assets/sprites/bliss.png';
 
 function Settings({setGameStatus}) {
   const [volume, setVolume] = useState(50);
@@ -26,49 +27,80 @@ function Settings({setGameStatus}) {
         bottom: 0,          // Span full height
       }}
     >
-      <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>SETTINGS</h1>
-      
+      {/* Background Layer */}
       <div
         style={{
-          width: '80%',
-          maxWidth: '600px',
-          margin: '2rem',
-          padding: '1rem',
-          borderRadius: '10px',
-          border: '5px solid black',
-          background: 'white',
+          backgroundImage: `url(${bliss})`,
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          opacity: 0.3,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          height: '100%',
+          width: '100%',
+          zIndex: 0,
         }}
-      >
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ fontSize: '1.5rem', marginRight: '1rem' }}>
-            Volume:
-          </label>
-          <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            value={volume}
-            onChange={(e) => handleVolumeChange(parseInt(e.target.value))}
-            style={{ width: '200px' }}
-          />
-          <span style={{ fontSize: '1.2rem', marginLeft: '1rem' }}>{volume}%</span>
-        </div>
-      </div>
+      />
 
-      <button
-        onClick={() => setGameStatus("start-screen")}
+      {/* Foreground Content */}
+      <div
         style={{
-          fontSize: '2rem',
-          padding: '10px 30px',
-          borderRadius: '20px',
-          margin: '1rem',
-          border: '5px solid black',
-          background: 'white',
-          cursor: 'pointer',
+          position: 'relative',
+          zIndex: 1,
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        BACK
-      </button>
+        <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>SETTINGS</h1>
+        
+        <div
+          style={{
+            width: '80%',
+            maxWidth: '600px',
+            margin: '2rem',
+            padding: '1rem',
+            borderRadius: '10px',
+            border: '5px solid black',
+            background: 'white',
+          }}
+        >
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ fontSize: '1.5rem', marginRight: '1rem' }}>
+              Volume:
+            </label>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              value={volume}
+              onChange={(e) => handleVolumeChange(parseInt(e.target.value))}
+              style={{ width: '200px' }}
+            />
+            <span style={{ fontSize: '1.2rem', marginLeft: '1rem' }}>{volume}%</span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setGameStatus("start-screen")}
+          style={{
+            fontSize: '2rem',
+            padding: '10px 30px',
+            borderRadius: '20px',
+            margin: '1rem',
+            border: '5px solid black',
+            background: 'white',
+            cursor: 'pointer',
+          }}
+        >
+          BACK
+        </button>
+      </div>
     </div>
   );
 }

@@ -8,18 +8,6 @@ import clickSound from '../assets/sprites/minecraft_click.mp3'; // Import the so
 
 
 function Scoreboard({setGameStatus}) {
-  // Static dummy data
-  const dummyScores = [
-    { name: "Champion", score: 1200 },
-    { name: "Score Hunter", score: 1100 },
-    { name: "Super Star", score: 1050 },
-    { name: "Super Hero", score: 1000 },
-    { name: "Super Wizard", score: 980 },
-    { name: "Pro Gamer", score: 950 },
-    { name: "Super Legend", score: 950 },
-    { name: "Elite Player", score: 920 }
-  ];
-
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

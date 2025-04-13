@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './SaveScoreForm.css';
 
-function SaveScoreForm({ score, onClose }) {
+function SaveScoreForm({ score, onClose, setScoreSavedStatus }) {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   function handleSubmit(event) {
     event.preventDefault(); // prevent page refresh
@@ -27,6 +28,7 @@ function SaveScoreForm({ score, onClose }) {
         console.log('Success:', data);
         clearTimeout(timeoutId); // Clear the timeout if the API call succeeds
         setIsSubmitting(false);
+        setScoreSavedStatus(true); // Set score saved status to true
         onClose(); // Close the popup after successful submission
       })
       .catch(error => {
@@ -64,10 +66,10 @@ function SaveScoreForm({ score, onClose }) {
             </button>
             <button 
               type="submit" 
-              disabled={isSubmitting}
               className="save-button"
+              disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : 'Save'}
+              {isSubmitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

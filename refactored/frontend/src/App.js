@@ -2,15 +2,15 @@ import React from 'react';
 import GameCanvas from './components/GameCanvas';
 import ScoreMessage from './components/ScoreMessage';
 import StartScreen from './components/StartScreen';
-
+import GameOverScreen from './components/GameOverScreen';
 function App() {
   // "start-screen": start screen
   // "game-screen": playing game
   // "scores-screen": scores screen
   // "settings-screen": settings screen
   // "game-over-screen": game over screen
-  const [gameStatus, setGameStatus] = React.useState("start-screen");
-
+  const [gameStatus, setGameStatus] = React.useState("game-over-screen");
+  
   let content;
   if (gameStatus === "start-screen") {
     content = (
@@ -24,7 +24,17 @@ function App() {
         <GameCanvas
           setGameStatus={setGameStatus}
         />
-        <ScoreMessage />
+        <ScoreMessage 
+          />
+      </>
+    );
+  } else if (gameStatus === "game-over-screen") {
+    content = (
+      <>
+        
+        <GameOverScreen 
+          setGameStatus={setGameStatus}
+          />
       </>
     );
   } else {

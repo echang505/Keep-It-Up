@@ -1,0 +1,19 @@
+@keyframes wobble {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.balloon-wobble {
+  animation: wobble 0.2s ease-in-out;
+  transform-origin: center center;
+} 

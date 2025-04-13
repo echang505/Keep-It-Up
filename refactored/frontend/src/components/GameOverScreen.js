@@ -43,7 +43,7 @@ function SpriteImage({ frames, width = 200, height = 80 }) {
 }
 
 
-function SpriteButton({ onClick, text, frames }) {
+function SpriteButton({ onClick, text, frames, disabled = false }) {
   const [frame, setFrame] = useState(0);
   const { playSound } = useAudio();
 
@@ -55,8 +55,10 @@ function SpriteButton({ onClick, text, frames }) {
   }, []);
   
   const handleClick = () => {
-    playSound(clickSound);
-    onClick();
+    if (!disabled) {
+      playSound(clickSound);
+      onClick && onClick();
+    }
   };
 
 
@@ -69,12 +71,13 @@ function SpriteButton({ onClick, text, frames }) {
         backgroundImage: `url(${frames[frame]})`,
         backgroundColor: 'transparent',
         border: 'none',
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
         color: 'black',
         backgroundSize: 'contain',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
         margin: '0rem 0',
+        opacity: disabled ? 0.7 : 1,
       }}
     >
       {text}
@@ -155,6 +158,7 @@ function GameOverScreen({ setGameStatus, score }) {
                 </button> */}
                 {scoreSavedStatus ? <SpriteButton
                     frames={[saveSpriteGray1, saveSpriteGray2]}
+                    disabled={true}
                 />:<SpriteButton
                     onClick={() => setShowSaveForm(true)}
                     frames={[saveSprite1, saveSprite2]}

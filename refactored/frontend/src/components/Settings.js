@@ -63,12 +63,19 @@ function SpriteButton({ onClick, text, frames }) {
 }
 
 function Settings({setGameStatus}) {
-  const [volume, setVolume] = useState(50);
+  const [musicVolume, setMusicVolume] = useState(50);
+  const [sfxVolume, setSfxVolume] = useState(50);
 
-  const handleVolumeChange = (value) => {
-    setVolume(value);
+  const handleMusicVolumeChange = (value) => {
+    setMusicVolume(value);
     // In a real app, you would save this setting to localStorage or a backend
-    console.log('Volume updated:', value);
+    console.log('Music volume updated:', value);
+  };
+
+  const handleSfxVolumeChange = (value) => {
+    setSfxVolume(value);
+    // In a real app, you would save this setting to localStorage or a backend
+    console.log('Sound effects volume updated:', value);
   };
 
   return (
@@ -126,25 +133,60 @@ function Settings({setGameStatus}) {
             width: '80%',
             maxWidth: '600px',
             margin: '2rem',
-            padding: '1rem',
+            padding: '1.5rem',
             borderRadius: '10px',
             border: '5px solid black',
             background: 'white',
           }}
         >
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ fontSize: '1.5rem', marginRight: '1rem' }}>
-              Volume:
-            </label>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              value={volume}
-              onChange={(e) => handleVolumeChange(parseInt(e.target.value))}
-              style={{ width: '200px' }}
-            />
-            <span style={{ fontSize: '1.2rem', marginLeft: '1rem' }}>{volume}%</span>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            width: '100%',
+            padding: '1rem 0'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              alignItems: 'center',
+              width: '100%',
+              marginBottom: '2rem' 
+            }}>
+              <label style={{ fontSize: '1.5rem', marginRight: '1rem', width: '100px' }}>
+                Music:
+              </label>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={musicVolume}
+                onChange={(e) => handleMusicVolumeChange(parseInt(e.target.value))}
+                style={{ flex: 1 }}
+              />
+              <span style={{ fontSize: '1.2rem', marginLeft: '1rem', width: '50px' }}>{musicVolume}%</span>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              alignItems: 'center',
+              width: '100%',
+              marginBottom: '0' 
+            }}>
+              <label style={{ fontSize: '1.5rem', marginRight: '1rem', width: '100px' }}>
+                SFX:
+              </label>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={sfxVolume}
+                onChange={(e) => handleSfxVolumeChange(parseInt(e.target.value))}
+                style={{ flex: 1 }}
+              />
+              <span style={{ fontSize: '1.2rem', marginLeft: '1rem', width: '50px' }}>{sfxVolume}%</span>
+            </div>
           </div>
         </div>
 

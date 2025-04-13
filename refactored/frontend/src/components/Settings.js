@@ -24,7 +24,7 @@ function SpriteImage({ frames, width = 170, height = 50 }) {
         backgroundSize: 'contain',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
-        marginTop: '-180px'
+        marginTop: '-80px'
       }}
     />
   );
@@ -44,8 +44,8 @@ function SpriteButton({ onClick, text, frames }) {
     <button
       onClick={onClick}
       style={{
-        width: '370px',
-        height: '110px',
+        width: '330px',
+        height: '100px',
         backgroundImage: `url(${frames[frame]})`,
         backgroundColor: 'transparent',
         border: 'none',

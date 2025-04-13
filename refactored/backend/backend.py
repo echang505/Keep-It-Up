@@ -1,67 +1,143 @@
 from flask import Flask, request, jsonify
-import json
 import os
+import json
+from flask_cors import CORS
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Directory to store all leaderboard JSON files
-LEADERBOARD_DIR = 'leaderboards'
+# Supabase PostgreSQL connection details
+DB_HOST = os.getenv('SUPABASE_DB_HOST')
+DB_PORT = os.getenv('SUPABASE_DB_PORT', '5432')
+DB_NAME = os.getenv('SUPABASE_DB_NAME')
+DB_USER = os.getenv('SUPABASE_DB_USER')
+DB_PASSWORD = os.getenv('SUPABASE_DB_PASSWORD')
 
-# Step 1: Create the directory if it doesn't exist
-if not os.path.exists(LEADERBOARD_DIR):
-    os.makedirs(LEADERBOARD_DIR)
+# Function to get database connection
+def get_db_connection():
+    try:
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD
+        )
+        return conn
+    except Exception as e:
+        print(f"Database connection error: {e}")
+        return None
 
-# Step 2: Helper to get the correct leaderboard file path based on the board name
-def get_leaderboard_file(board_name):
-    # Sanitize board_name to avoid directory traversal attacks
-    safe_board_name = "".join(c for c in board_name if c.isalnum() or c in ('_', '-'))
-    return os.path.join(LEADERBOARD_DIR, f"{safe_board_name}.json")
+# Initialize database table if it doesn't exist
+def init_db():
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                # Create scores table if it doesn't exist
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS scores (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        score INTEGER NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                conn.commit()
+                print("Database initialized successfully")
+        except Exception as e:
+            print(f"Error initializing database: {e}")
+        finally:
+            conn.close()
 
-# Step 3: Helper to load leaderboard data from a specific file
-def load_leaderboard(board_name):
-    file_path = get_leaderboard_file(board_name)
+# Endpoint to get leaderboard with pagination
+@app.route('/leaderboard/keepitup', methods=['GET'])
+def get_leaderboard():
+    try:
+        # Get pagination parameters
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        
+        # Calculate offset
+        offset = (page - 1) * per_page
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"error": "Database connection failed"}), 500
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Get total count
+                cur.execute("SELECT COUNT(*) FROM scores")
+                total_scores = cur.fetchone()['count']
+                
+                # Get paginated scores
+                cur.execute("""
+                    SELECT name, score 
+                    FROM scores 
+                    ORDER BY score DESC 
+                    LIMIT %s OFFSET %s
+                """, (per_page, offset))
+                
+                scores = cur.fetchall()
+                
+                # Calculate total pages
+                total_pages = (int(total_scores) + per_page - 1) // per_page
+                
+                return jsonify({
+                    'scores': scores,
+                    'total': total_scores,
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': total_pages
+                })
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        print(f"Error in get_leaderboard: {e}")
+        return jsonify({"error": "Failed to load leaderboard"}), 500
 
-    # If file does not exist, initialize it
-    if not os.path.exists(file_path):
-        with open(file_path, 'w') as f:
-            json.dump([], f)
+# Endpoint to submit a score
+@app.route('/submit/keepitup', methods=['POST'])
+def submit_score():
+    try:
+        data = request.json
+        name = data.get('name')
+        score = data.get('score')
 
-    with open(file_path, 'r') as f:
-        return json.load(f)
+        if not name or score is None:
+            return jsonify({'error': 'Name and score are required.'}), 400
 
-# Step 4: Helper to save leaderboard data to a specific file
-def save_leaderboard(board_name, data):
-    file_path = get_leaderboard_file(board_name)
-    with open(file_path, 'w') as f:
-        json.dump(data, f, indent=4)
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"error": "Database connection failed"}), 500
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO scores (name, score) VALUES (%s, %s)",
+                    (name, score)
+                )
+                conn.commit()
+                return jsonify({'message': 'Score submitted successfully!'}), 200
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        print(f"Error in submit_score: {e}")
+        return jsonify({"error": "Failed to submit score"}), 500
 
-# Step 5: Endpoint to get leaderboard for a given board
-@app.route('/leaderboard/<board_name>', methods=['GET'])
-def get_leaderboard(board_name):
-    leaderboard = load_leaderboard(board_name)
+# Initialize database on startup
+init_db()
 
-    # Optional: Sort leaderboard by score descending
-    leaderboard.sort(key=lambda x: x['score'], reverse=True)
-
-    return jsonify(leaderboard)
-
-# Step 6: Endpoint to submit a score to a specific leaderboard
-@app.route('/submit/<board_name>', methods=['POST'])
-def submit_score(board_name):
-    data = request.json
-    name = data.get('name')
-    score = data.get('score')
-
-    if not name or score is None:
-        return jsonify({'error': 'Name and score are required.'}), 400
-
-    leaderboard = load_leaderboard(board_name)
-    leaderboard.append({'name': name, 'score': score})
-
-    save_leaderboard(board_name, leaderboard)
-
-    return jsonify({'message': f'Score submitted successfully to {board_name} leaderboard!'}), 200
-
-# Step 7: Start the Flask server
+# Start the Flask server
 if __name__ == '__main__':
-    app.run(debug=True)
+    print("Server starting with Supabase PostgreSQL connection")
+    app.run(debug=True, host='0.0.0.0', port=5001)

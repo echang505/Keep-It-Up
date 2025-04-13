@@ -5,7 +5,6 @@ function SaveScoreForm({ score, onClose, setScoreSavedStatus }) {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   function handleSubmit(event) {
     event.preventDefault(); // prevent page refresh
     setIsSubmitting(true);

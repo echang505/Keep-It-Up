@@ -6,6 +6,7 @@ import backSprite1 from '../assets/sprites/back1.png';
 import backSprite2 from '../assets/sprites/back2.png';
 // import clickSound from '../assets/sprites/minecraft_click.mp3';
 import clickSound from '../assets/sprites/mouse.mp3';
+import { useAudio } from '../context/AudioContext';
 
 
 
@@ -36,6 +37,7 @@ function SpriteImage({ frames, width = 170, height = 50 }) {
 
 function SpriteButton({ onClick, text, frames }) {
   const [frame, setFrame] = useState(0);
+  const { playSound } = useAudio();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,10 +47,9 @@ function SpriteButton({ onClick, text, frames }) {
   }, []);
 
   const handleClick = () => {
-      const audio = new Audio(clickSound); // Create a new Audio instance
-      audio.play(); // Play the sound
-      onClick(); // Trigger the button's onClick handler
-    };
+    playSound(clickSound);
+    onClick();
+  };
 
   return (
     <button
@@ -74,7 +75,7 @@ function SpriteButton({ onClick, text, frames }) {
 
 function Settings({setGameStatus}) {
   const [musicVolume, setMusicVolume] = useState(50);
-  const [sfxVolume, setSfxVolume] = useState(50);
+  const { sfxVolume, setSfxVolume } = useAudio();
 
   const handleMusicVolumeChange = (value) => {
     setMusicVolume(value);
@@ -84,8 +85,7 @@ function Settings({setGameStatus}) {
 
   const handleSfxVolumeChange = (value) => {
     setSfxVolume(value);
-    // In a real app, you would save this setting to localStorage or a backend
-    console.log('Sound effects volume updated:', value);
+    // Removed the test sound that was playing here
   };
 
   return (

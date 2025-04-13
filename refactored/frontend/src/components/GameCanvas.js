@@ -495,7 +495,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           });
           
           // Spawn lasers periodically
-          laserTimerRef.current += 16; // Assuming 60fps
+          laserTimerRef.current += 32; // Assuming 60fps
           if (currentScoreRef.current >= 10 && laserTimerRef.current >= laserInterval) {
             spawnLaser();
             laserTimerRef.current = 0;

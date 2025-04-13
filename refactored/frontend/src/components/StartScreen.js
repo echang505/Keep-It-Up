@@ -8,7 +8,9 @@ import scoresSprite2 from '../assets/sprites/scores2.png';
 import settingsSprite1 from '../assets/sprites/settings1.png';
 import settingsSprite2 from '../assets/sprites/settings2.png';
 import bliss from '../assets/sprites/bliss.png';
-import clickSound from '../assets/sprites/minecraft_click.mp3';
+// import clickSound from '../assets/sprites/minecraft_click.mp3';
+import clickSound from '../assets/sprites/mouse.mp3';
+
 
 
 function SpriteImage({ frames, width = 200, height = 80 }) {

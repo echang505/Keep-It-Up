@@ -1,9 +1,41 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import backgroundMusic from '../assets/sprites/background_music.mp3';
 
 const AudioContext = createContext();
 
 export function AudioProvider({ children }) {
   const [sfxVolume, setSfxVolume] = useState(50); // Default to 50%
+  const [musicVolume, setMusicVolume] = useState(50); // Default to 50%
+  const backgroundMusicRef = useRef(null);
+
+  // Initialize background music and start playing immediately
+  useEffect(() => {
+    backgroundMusicRef.current = new Audio(backgroundMusic);
+    backgroundMusicRef.current.loop = true; // Loop the background music
+    
+    // Set initial volume
+    backgroundMusicRef.current.volume = musicVolume / 100;
+    
+    // Start playing immediately
+    backgroundMusicRef.current.play().catch(error => {
+      console.error("Error playing background music:", error);
+    });
+    
+    // Clean up on unmount
+    return () => {
+      if (backgroundMusicRef.current) {
+        backgroundMusicRef.current.pause();
+        backgroundMusicRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update music volume when it changes
+  useEffect(() => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.volume = musicVolume / 100;
+    }
+  }, [musicVolume]);
 
   const playSound = (audio) => {
     const sound = new Audio(audio);
@@ -12,7 +44,13 @@ export function AudioProvider({ children }) {
   };
 
   return (
-    <AudioContext.Provider value={{ sfxVolume, setSfxVolume, playSound }}>
+    <AudioContext.Provider value={{ 
+      sfxVolume, 
+      setSfxVolume, 
+      musicVolume, 
+      setMusicVolume, 
+      playSound 
+    }}>
       {children}
     </AudioContext.Provider>
   );

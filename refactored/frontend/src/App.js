@@ -4,6 +4,8 @@ import ScoreMessage from './components/ScoreMessage';
 import StartScreen from './components/StartScreen';
 import Scoreboard from './components/Scoreboard';
 import Settings from './components/Settings';
+import GameOverScreen from './components/GameOverScreen';
+
 
 function App() {
   // "start-screen": start screen
@@ -12,7 +14,7 @@ function App() {
   // "settings-screen": settings screen
   // "game-over-screen": game over screen
   const [gameStatus, setGameStatus] = React.useState("start-screen");
-
+  
   let content;
   if (gameStatus === "start-screen") {
     content = (
@@ -26,7 +28,17 @@ function App() {
         <GameCanvas
           setGameStatus={setGameStatus}
         />
-        <ScoreMessage />
+        <ScoreMessage 
+          />
+      </>
+    );
+  } else if (gameStatus === "game-over-screen") {
+    content = (
+      <>
+        
+        <GameOverScreen 
+          setGameStatus={setGameStatus}
+          />
       </>
     );
   } else if (gameStatus === "scores-screen") {

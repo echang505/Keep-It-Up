@@ -88,28 +88,6 @@ function GameCanvas() {
         x += vx;
         y += vy;
         vy += 0.05; // gravity
-
-        // Wall collision detection and bouncing
-        const dampening = 0.7; // Reduces velocity on bounce
-        const ballRadius = 25;
-
-        // Right and left wall bouncing
-        if (x + ballRadius > window.innerWidth) {
-          x = window.innerWidth - ballRadius;
-          vx = -vx * dampening;
-        } else if (x - ballRadius < 0) {
-          x = ballRadius;
-          vx = -vx * dampening;
-        }
-
-        // Floor and ceiling bouncing
-        if (y + ballRadius > window.innerHeight) {
-          y = window.innerHeight - ballRadius;
-          vy = -vy * dampening;
-        } else if (y - ballRadius < 0) {
-          y = ballRadius;
-          vy = -vy * dampening;
-        }
         
         const dx = fingerRef.current.x - x;
         const dy = fingerRef.current.y - y;
@@ -132,16 +110,32 @@ function GameCanvas() {
           y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
         }
         
+        // Bounce off the sides
+        const ballRadius = 25;
+        if (x - ballRadius <= 0) {
+          x = ballRadius;
+          vx = Math.abs(vx) * 0.8; // Bounce with slight energy loss
+        } else if (x + ballRadius >= window.innerWidth) {
+          x = window.innerWidth - ballRadius;
+          vx = -Math.abs(vx) * 0.8; // Bounce with slight energy loss
+        }
         
-
+        // Allow vertical movement to go off screen
         ballRef.current = {
-          x: Math.max(25, Math.min(window.innerWidth - 25, x)),
-          y: Math.max(25, Math.min(window.innerHeight - 25, y)),
+          x: x,
+          y: y, // Allow y to go off screen
           vx,
           vy,
         };
 
-        setRenderBall({ x: ballRef.current.x, y: ballRef.current.y });
+        // Only render the ball if it's within the visible area
+        if (y >= -50 && y <= window.innerHeight + 50) {
+          setRenderBall({ x: ballRef.current.x, y: ballRef.current.y });
+        } else {
+          // Keep the ball in the render state but don't update its position
+          setRenderBall(prev => prev);
+        }
+        
         requestAnimationFrame(() => renderLoop());
       };
 

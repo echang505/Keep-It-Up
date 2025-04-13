@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import leaderboard1 from '../assets/sprites/leaderboard1.png';
+import leaderboard2 from '../assets/sprites/leaderboard2.png';
+import backSprite1 from '../assets/sprites/back1.png';
+import backSprite2 from '../assets/sprites/back2.png';
+
 
 function Scoreboard({setGameStatus}) {
   // Static dummy data
@@ -69,6 +74,65 @@ function Scoreboard({setGameStatus}) {
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
+  // this is for the "LEADERBOARD" text
+  function SpriteImage({ frames, width = 400, height = 120 }) {
+    const [frame, setFrame] = useState(0);
+  
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setFrame(prev => (prev === 0 ? 1 : 0));
+      }, 500);
+      return () => clearInterval(interval);
+    }, []);
+  
+    return (
+      <div
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          backgroundImage: `url(${frames[frame]})`,
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          marginTop: '20px'
+        }}
+      />
+    );
+  }
+  
+  function SpriteButton({ onClick, text, frames }) {
+    const [frame, setFrame] = useState(0);
+  
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setFrame(prev => (prev === 0 ? 1 : 0));
+      }, 500);
+      return () => clearInterval(interval);
+    }, []);
+  
+    return (
+      <button
+        onClick={onClick}
+        style={{
+          width: '400px',
+          height: '140px',
+          backgroundImage: `url(${frames[frame]})`,
+          backgroundColor: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'black',
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          margin: '2rem 0',
+        }}
+      >
+        {text}
+      </button>
+    );
+  }
+  
+
   // Simulate fetching scores with dummy data
   const fetchScores = (pageNum) => {
     try {
@@ -131,7 +195,9 @@ function Scoreboard({setGameStatus}) {
         background: '#f0f0f0'
       }}
     >
-      <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>HIGH SCORES</h1>
+      <SpriteImage frames={[leaderboard1, leaderboard2]} width={750} height={150} />
+
+      {/* <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>HIGH SCORES</h1> */}
       
       <div
         style={{
@@ -183,20 +249,10 @@ function Scoreboard({setGameStatus}) {
         )}
       </div>
 
-      <button
+      <SpriteButton
         onClick={() => setGameStatus("start-screen")}
-        style={{
-          fontSize: '2rem',
-          padding: '10px 30px',
-          borderRadius: '20px',
-          margin: '1rem',
-          border: '5px solid black',
-          background: 'white',
-          cursor: 'pointer',
-        }}
-      >
-        BACK
-      </button>
+        frames={[backSprite1, backSprite2]}
+      />
     </div>
   );
 }

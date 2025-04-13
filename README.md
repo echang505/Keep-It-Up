@@ -3,8 +3,6 @@
 **Keep the balloon in the air — and your spirits too!**  
 A playful web game that combines MediaPipe hand tracking with fast-paced, nostalgic fun. Inspired by childhood games and endless arcade classics.
 
-![Keep It Up Banner](banner-image-if-you-have-one)
-
 ## Table of Contents
 
 - [Inspiration](#inspiration)

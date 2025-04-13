@@ -6,6 +6,7 @@ import Scoreboard from './components/Scoreboard';
 import Settings from './components/Settings';
 import GameOverScreen from './components/GameOverScreen';
 import ObjectSelectionScreen from './components/ObjectSelectionScreen';
+import InstructionsPopup from './components/InstructionsPopup';
 
 
 function App() {
@@ -19,6 +20,17 @@ function App() {
   const [score, setScore] = React.useState(0); 
   const currentScoreRef = React.useRef(0); 
   const [selectedObject, setSelectedObject] = React.useState("balloon"); // Default to balloon
+  const [showInstructions, setShowInstructions] = React.useState(true);
+
+  // Show instructions on every page load
+  React.useEffect(() => {
+    // Always show instructions on page load
+    setShowInstructions(true);
+  }, []);
+
+  const handleCloseInstructions = () => {
+    setShowInstructions(false);
+  };
 
   let content;
   if (gameStatus === "start-screen") {
@@ -77,6 +89,7 @@ function App() {
   return (
     <div>
       {content}
+      {showInstructions && <InstructionsPopup onClose={handleCloseInstructions} />}
     </div>
   );
 }

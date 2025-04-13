@@ -336,7 +336,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
         
         // Spawn bombs periodically
         bombSpawnTimerRef.current += 16; // Assuming 60fps
-        if (bombSpawnTimerRef.current >= bombSpawnInterval) {
+        if (currentScoreRef.current >= 5 && bombSpawnTimerRef.current >= bombSpawnInterval) {
           spawnBomb();
           bombSpawnTimerRef.current = 0;
         }

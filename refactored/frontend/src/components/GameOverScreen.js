@@ -1,7 +1,7 @@
 import React from 'react';
-
+import SaveScoreForm from './SaveScoreForm';
 function GameOverScreen({ setGameStatus, score }) {
-    console.log("GameOverScreen");
+    const [saveScreenStatus, setSaveScreenStatus] = React.useState(false);
     return (
         <div
             style={{
@@ -20,7 +20,7 @@ function GameOverScreen({ setGameStatus, score }) {
 
             <button
                 onClick={() => {
-                    setGameStatus("game-screen");
+                    setSaveScreenStatus(true);
                 }}
                 style={{
                     fontSize: '2rem',
@@ -34,7 +34,8 @@ function GameOverScreen({ setGameStatus, score }) {
             >
                 Save Score
             </button>
-
+            {saveScreenStatus? <> <SaveScoreForm score={score}/>
+            </>: <></>}
             <button
                 onClick={() => {
                     setGameStatus("game-screen");

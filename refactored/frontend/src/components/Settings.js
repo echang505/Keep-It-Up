@@ -18,6 +18,12 @@ function Settings({setGameStatus}) {
         alignItems: 'center',
         justifyContent: 'center',
         fontFamily: 'Comic Sans MS, sans-serif',
+        overflow: 'hidden',  // Prevent scrolling
+        position: 'fixed',   // Fix the component in place
+        top: 0,             // Start from the top
+        left: 0,            // Start from the left
+        right: 0,           // Span full width
+        bottom: 0,          // Span full height
       }}
     >
       <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>SETTINGS</h1>

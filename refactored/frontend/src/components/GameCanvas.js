@@ -10,8 +10,8 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const handLandmarkerRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
 
-  const fingerRef = React.useRef({ x: 0, y: 0 });
-  const [fingerVelocity, setFingerVelocity] = React.useState({ dx: 0, dy: 0 });
+  const fingerRef = React.useRef([{ x: 0, y: 0 }, { x: 0, y: 0 }]);
+  const [fingerVelocity, setFingerVelocity] = React.useState([{ dx: 0, dy: 0 }, { dx: 0, dy: 0 }]);
 
   const ballRef = useRef({ x: 320, y: 240, vx: 2, vy: -.01 });
   const [renderBall, setRenderBall] = React.useState({ x: 320, y: 240 });
@@ -71,23 +71,26 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
           
           let tipCoords;
-          if (results.landmarks && results.landmarks[0]) {
-            let tip = results.landmarks[0][4]; // 8 for indexs finger tip
-            tipCoords = {
-              x: canvasElement.width - tip.x * canvasElement.width, // ← flip X
-              y: tip.y * canvasElement.height,
-            };
-            canvasCtx.beginPath();
-            canvasCtx.arc(tip.x * canvasElement.width, tipCoords.y, 10, 0, 2 * Math.PI);
-            canvasCtx.fillStyle = 'red';
-            canvasCtx.fill();
-            canvasCtx.strokeStyle = 'red';
-            canvasCtx.stroke();
-            canvasCtx.closePath();
-            // console.log(tip);
-            fingerRef.current = tipCoords;
-          
+          for (let i = 0; i < 2; i++){
+            if (results.landmarks && results.landmarks[i]) {
+              let tip = results.landmarks[i][4]; // 8 for indexs finger tip
+              tipCoords = {
+                x: canvasElement.width - tip.x * canvasElement.width, // ← flip X
+                y: tip.y * canvasElement.height,
+              };
+              canvasCtx.beginPath();
+              canvasCtx.arc(tip.x * canvasElement.width, tipCoords.y, 10, 0, 2 * Math.PI);
+              canvasCtx.fillStyle = 'red';
+              canvasCtx.fill();
+              canvasCtx.strokeStyle = 'red';
+              canvasCtx.stroke();
+              canvasCtx.closePath();
+              // console.log(tip);
+              fingerRef.current[i] = tipCoords;
+            
+            }
           }
+          
           lastVideoTimeRef.current = now;
         }
 
@@ -98,29 +101,47 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
         y += vy;
         vy += 0.05; // gravity
         
-        const dx = fingerRef.current.x - x;
-        const dy = fingerRef.current.y - y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dx1 = fingerRef.current[0].x - x;
+        const dy1 = fingerRef.current[0].y - y;
+        const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+        const dx2 = fingerRef.current[1].x - x;
+        const dy2 = fingerRef.current[1].y - y;
+        const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
         const collisionRadius = 35;
         // console.log(fingerRef.current.x, fingerRef.current.y, ballRef.current.x, ballRef.current.y);
         
-        if (dist < collisionRadius) {
-          console.log('Collision detected');
+        if (dist1 < collisionRadius) {
+          console.log('Collision 1 detected');
           currentScoreRef.current += 1;
           setScore(currentScoreRef.current);
           // Compute bounce angle and preserve momentum
-          const angle = Math.atan2(dy, dx);
-          const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
+          const angle = Math.atan2(dy1, dx1);
+          const fingerSpeed = Math.sqrt(fingerVelocity[0].dx ** 2 + fingerVelocity[0].dy ** 2) || 1;
           const bounceStrength = Math.max(8, Math.min(fingerSpeed * 0.5, 15));
 
           vx = -Math.cos(angle) * bounceStrength;
           vy = -Math.sin(angle) * bounceStrength;
 
           // Move ball slightly outside collision radius to prevent repeat bouncing
-          x =  fingerRef.current.x - Math.cos(angle) * (collisionRadius + 2);
-          y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
+          x =  fingerRef.current[0].x - Math.cos(angle) * (collisionRadius + 2);
+          y =  fingerRef.current[0].y - Math.sin(angle) * (collisionRadius + 2);
         }
-        
+        if (dist2 < collisionRadius) {
+          console.log('Collision 2 detected');
+          currentScoreRef.current += 1;
+          setScore(currentScoreRef.current);
+          // Compute bounce angle and preserve momentum
+          const angle = Math.atan2(dy2, dx2);
+          const fingerSpeed = Math.sqrt(fingerVelocity[1].dx ** 2 + fingerVelocity[1].dy ** 2) || 1;
+          const bounceStrength = Math.max(8, Math.min(fingerSpeed * 0.5, 15));
+
+          vx = -Math.cos(angle) * bounceStrength;
+          vy = -Math.sin(angle) * bounceStrength;
+
+          // Move ball slightly outside collision radius to prevent repeat bouncing
+          x =  fingerRef.current[1].x - Math.cos(angle) * (collisionRadius + 2);
+          y =  fingerRef.current[1].y - Math.sin(angle) * (collisionRadius + 2);
+        }
         // Bounce off the sides
         const ballRadius = 25;
         if (x - ballRadius <= 0) {

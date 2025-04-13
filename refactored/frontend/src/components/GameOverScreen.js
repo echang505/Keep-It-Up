@@ -122,7 +122,7 @@ function GameOverScreen({ setGameStatus, score }) {
             >
                 {/* <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>Game Over!</h1> */}
                 <SpriteImage frames={[gameOverSprite1, gameOverSprite2]} width={700} height={200} />
-                <h2 style={{ fontSize: '3rem', margin: '0.5rem', marginBottom: '1.8rem' }}>Your Score: {score}</h2>
+                <h2 style={{ fontSize: '3rem', margin: '0.5rem', marginBottom: '1.8rem', color: 'black', textShadow: 'none'}}>Your Score: {score}</h2>
 
                 {/* <button
                     onClick={() => {

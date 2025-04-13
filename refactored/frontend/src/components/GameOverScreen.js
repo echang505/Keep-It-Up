@@ -35,6 +35,23 @@ function GameOverScreen({ setGameStatus, score }) {
                 Save Score
             </button>
 
+            <button
+                onClick={() => {
+                    setGameStatus("game-screen");
+                }}
+                style={{
+                    fontSize: '2rem',
+                    padding: '10px 30px',
+                    borderRadius: '20px',
+                    margin: '1rem',
+                    border: '5px solid black',
+                    background: 'white',
+                    cursor: 'pointer',
+                }}
+            >
+                Play Again
+            </button>            
+
 
             <button
                 onClick={() => {

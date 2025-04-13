@@ -72,7 +72,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           
           let tipCoords;
           if (results.landmarks && results.landmarks[0]) {
-            let tip = results.landmarks[0][8]; // change to thumb??
+            let tip = results.landmarks[0][4]; // 8 for indexs finger tip
             tipCoords = {
               x: canvasElement.width - tip.x * canvasElement.width, // ← flip X
               y: tip.y * canvasElement.height,

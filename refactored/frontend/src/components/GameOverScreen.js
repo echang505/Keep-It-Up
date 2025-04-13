@@ -208,7 +208,7 @@ function GameOverScreen({ setGameStatus, score }) {
                         onClose={() => {setShowSaveForm(false);
                             const audio = new Audio(clickSound); // Create a new Audio instance
                             audio.play();
-                        }
+                        }}
 
    
 

@@ -74,8 +74,12 @@ function SpriteButton({ onClick, text, frames }) {
 }
 
 function Settings({setGameStatus}) {
-  const [musicVolume, setMusicVolume] = useState(50);
-  const { sfxVolume, setSfxVolume } = useAudio();
+  const { 
+    sfxVolume, 
+    setSfxVolume, 
+    musicVolume, 
+    setMusicVolume
+  } = useAudio();
 
   const handleMusicVolumeChange = (value) => {
     setMusicVolume(value);
@@ -200,23 +204,9 @@ function Settings({setGameStatus}) {
           </div>
         </div>
 
-        {/* <button
-          onClick={() => setGameStatus("start-screen")}
-          style={{
-            fontSize: '2rem',
-            padding: '10px 30px',
-            borderRadius: '20px',
-            margin: '1rem',
-            border: '5px solid black',
-            background: 'white',
-            cursor: 'pointer',
-          }}
-        >
-          BACK
-        </button> */}
         <SpriteButton
-            onClick={() => setGameStatus("start-screen")}
-            frames={[backSprite1, backSprite2]}
+          onClick={() => setGameStatus("start-screen")}
+          frames={[backSprite1, backSprite2]}
         />
       </div>
     </div>

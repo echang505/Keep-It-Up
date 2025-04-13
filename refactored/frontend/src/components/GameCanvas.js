@@ -2,15 +2,18 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
 import BombObject from './BombObject';
+import BonusPointObject from './BonusPointObject';
+import LaserObject from './LaserObject';
 import './GameCanvas.css';
-import boing from '../assets/sprites/boing.mp3'; 
-
+import boing from '../assets/sprites/boing.mp3';
+import { useAudio } from '../context/AudioContext';
 
 function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const handLandmarkerRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
+  const { playSound } = useAudio();
 
   // const fingerRef = React.useRef([{ x: 0, y: 0 }, { x: 0, y: 0 }]);
   // const [fingerVelocity, setFingerVelocity] = React.useState([{ dx: 0, dy: 0 }, { dx: 0, dy: 0 }]);
@@ -36,6 +39,16 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   // Countdown state
   const [countdown, setCountdown] = useState(3);
   const [gameStarted, setGameStarted] = useState(false);
+  
+  // Add bonus point state
+  const [bonusPoints, setBonusPoints] = useState([]);
+  const bonusPointTimerRef = useRef(0);
+  const bonusPointInterval = 5000; // Spawn a bonus point every 5 seconds
+  
+  // Add laser state
+  const [lasers, setLasers] = useState([]);
+  const laserTimerRef = useRef(0);
+  const laserInterval = 5000; // Spawn a laser every 5 seconds
   
   // Countdown effect
   useEffect(() => {
@@ -63,6 +76,10 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     bombSpawnTimerRef.current = 0;
     setCountdown(3);
     setGameStarted(false);
+    setBonusPoints([]);
+    bonusPointTimerRef.current = 0;
+    setLasers([]);
+    laserTimerRef.current = 0;
   }, []);
 
   // Function to spawn a new bomb
@@ -145,6 +162,38 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     
     // End the game
     setGameStatus("game-over-screen");
+  };
+
+  // Function to spawn a new bonus point
+  const spawnBonusPoint = () => {
+    const newBonusPoint = {
+      id: Date.now(),
+      x: Math.random() * (window.innerWidth - 100) + 50, // Keep away from edges
+      y: Math.random() * (window.innerHeight - 100) + 50, // Keep away from edges
+      lifetime: 0,
+      maxLifetime: 10000, // 10 seconds maximum lifetime
+    };
+    
+    setBonusPoints(prev => [...prev, newBonusPoint]);
+  };
+
+  // Function to spawn a new laser
+  const spawnLaser = () => {
+    const isHorizontal = Math.random() < 0.5;
+    const position = isHorizontal
+      ? Math.random() * window.innerHeight
+      : Math.random() * window.innerWidth;
+
+    const newLaser = {
+      id: Date.now(),
+      isHorizontal,
+      position,
+      state: 'warning',
+      timer: 1000, // 1 second warning
+      firingDuration: 500, // 0.5 seconds firing
+    };
+
+    setLasers(prev => [...prev, newLaser]);
   };
 
   useEffect(() => {
@@ -258,10 +307,19 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             console.log('Collision 1 detected');
             currentScoreRef.current += 1;
             setScore(currentScoreRef.current);
-            setIsColliding(true); // Set collision state to true
             
-            const audio = new Audio(boing); // Create a new Audio instance
-            audio.play();
+            // Only set isColliding to true if it's not already true
+            // This prevents multiple wobble animations from being triggered
+            if (!isColliding) {
+              setIsColliding(true);
+              
+              // Add a delay before setting isColliding back to false
+              setTimeout(() => {
+                setIsColliding(false);
+              }, 200); // Match the wobble animation duration
+            }
+            
+            playSound(boing);
 
             // Compute bounce angle and preserve momentum
             const angle = Math.atan2(dy1, dx1);
@@ -274,8 +332,6 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             // Move ball slightly outside collision radius to prevent repeat bouncing
             x =  fingerRef.current.x - Math.cos(angle) * (collisionRadius + 2);
             y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
-          } else {
-            setIsColliding(false); // Reset collision state when not colliding
           }
           // if (dist2 < collisionRadius) {
           //   console.log('Collision 2 detected');
@@ -370,6 +426,81 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             bombSpawnTimerRef.current = 0;
           }
           
+          // Update bonus points
+          setBonusPoints(prev => {
+            return prev.map(bonusPoint => {
+              // Update lifetime
+              const newLifetime = bonusPoint.lifetime + 16; // Assuming 60fps
+              
+              // Remove bonus point if it's been alive too long
+              if (newLifetime > bonusPoint.maxLifetime) {
+                return null;
+              }
+              
+              // Check collision with balloon
+              const dx = bonusPoint.x - x;
+              const dy = bonusPoint.y - y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              if (dist < 50) { // Collision radius
+                // Add bonus points
+                currentScoreRef.current += 1; // Add 1 extra points
+                setScore(currentScoreRef.current);
+                return null; // Remove the bonus point
+              }
+              
+              return { ...bonusPoint, lifetime: newLifetime };
+            }).filter(bonusPoint => bonusPoint !== null);
+          });
+          
+          // Spawn bonus points periodically
+          bonusPointTimerRef.current += 16; // Assuming 60fps
+          if (currentScoreRef.current >= 0 && bonusPointTimerRef.current >= bonusPointInterval) {
+            spawnBonusPoint();
+            bonusPointTimerRef.current = 0;
+          }
+          
+          // Update lasers
+          setLasers(prev => {
+            return prev.map(laser => {
+              laser.timer -= 16; // Assuming 60fps
+
+              if (laser.timer <= 0) {
+                if (laser.state === 'warning') {
+                  laser.state = 'firing';
+                  laser.timer = laser.firingDuration;
+                } else if (laser.state === 'firing') {
+                  return null; // Remove laser after firing
+                }
+              }
+
+              // Check collision with balloon during firing state
+              if (laser.state === 'firing') {
+                const ballRadius = 25;
+                if (laser.isHorizontal) {
+                  if (Math.abs(ballRef.current.y - laser.position) < ballRadius) {
+                    setGameStatus("game-over-screen");
+                    return null;
+                  }
+                } else {
+                  if (Math.abs(ballRef.current.x - laser.position) < ballRadius) {
+                    setGameStatus("game-over-screen");
+                    return null;
+                  }
+                }
+              }
+
+              return laser;
+            }).filter(laser => laser !== null);
+          });
+          
+          // Spawn lasers periodically
+          laserTimerRef.current += 32; // Assuming 60fps
+          if (currentScoreRef.current >= 10 && laserTimerRef.current >= laserInterval) {
+            spawnLaser();
+            laserTimerRef.current = 0;
+          }
+          
           // end game
           if (y > window.innerHeight) {
             console.log("ENDING GAME", y);
@@ -378,7 +509,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           }
         }
         
-        requestAnimationFrame(() => renderLoop());
+        requestAnimationFrame(renderLoop);
       };
 
       renderLoop();
@@ -430,6 +561,21 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           y={bomb.y} 
           isExploding={explodingBombs.includes(bomb.id)}
           onExplode={() => handleBombExplode(bomb.id)}
+        />
+      ))}
+      {bonusPoints.map(bonusPoint => (
+        <BonusPointObject
+          key={bonusPoint.id}
+          x={bonusPoint.x}
+          y={bonusPoint.y}
+        />
+      ))}
+      {lasers.map(laser => (
+        <LaserObject
+          key={laser.id}
+          isHorizontal={laser.isHorizontal}
+          position={laser.position}
+          state={laser.state}
         />
       ))}
       {!gameStarted && (

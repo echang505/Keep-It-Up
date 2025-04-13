@@ -157,7 +157,7 @@ function StartScreen({ setGameStatus }) {
           }}
         >
           <SpriteButton
-            onClick={() => setGameStatus("game-screen")}
+            onClick={() => setGameStatus("object-selection-screen")}
             frames={[startSprite1, startSprite2]}
           />
           <SpriteButton

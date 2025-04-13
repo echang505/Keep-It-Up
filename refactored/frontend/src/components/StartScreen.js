@@ -19,6 +19,9 @@ function SpriteImage({ frames, width = 200, height = 80 }) {
     return () => clearInterval(interval);
   }, []);
 
+
+function StartScreen({ setGameStatus }) {
+  console.log("StartScreen");
   return (
     <div
       style={{
@@ -67,6 +70,22 @@ function SpriteButton({ onClick, text, frames }) {
 
 function StartScreen({ setGameStatus }) {
   console.log("StartScreen");
+      <button
+        onClick={() => {
+          setGameStatus("game-screen");
+        }}
+        style={{
+          fontSize: '2rem',
+          padding: '10px 30px',
+          borderRadius: '20px',
+          margin: '1rem',
+          border: '5px solid black',
+          background: 'white',
+          cursor: 'pointer',
+        }}
+      >
+        START
+      </button>
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>

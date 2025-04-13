@@ -1,8 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
-
-
+import BombObject from './BombObject';
 
 function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const videoRef = useRef(null);
@@ -19,12 +18,110 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
 
   const ballRef = useRef({ x: 320, y: 240, vx: 2, vy: -.01 });
   const [renderBall, setRenderBall] = React.useState({ x: 320, y: 240 });
+  const [isColliding, setIsColliding] = React.useState(false);
+  
+  // Bomb state
+  const [bombs, setBombs] = React.useState([]);
+  const [explodingBombs, setExplodingBombs] = React.useState([]);
+  const bombSpawnTimerRef = useRef(0);
+  const bombSpawnInterval = 2000; // Spawn a bomb every 5 seconds
+  
   useEffect(() => {
     // Reset refs and state on (re)mount
     ballRef.current = { x: 320, y: 240, vx: 2, vy: -0.01 };
     currentScoreRef.current = 0;
     setScore(0);
+    setIsColliding(false);
+    setBombs([]);
+    setExplodingBombs([]);
+    bombSpawnTimerRef.current = 0;
   }, []);
+
+  // Function to spawn a new bomb
+  const spawnBomb = () => {
+    // Determine which edge to spawn from (0: top, 1: right, 2: bottom, 3: left)
+    const edge = Math.floor(Math.random() * 4);
+    
+    let x, y;
+    let vx, vy;
+    
+    // Calculate center of screen
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Set initial position and velocity based on which edge the bomb spawns from
+    switch (edge) {
+      case 0: // Top edge
+        x = Math.random() * window.innerWidth;
+        y = -50; // Start above the screen
+        // Calculate direction to center with some randomness
+        const angleToCenterTop = Math.atan2(centerY - y, centerX - x);
+        const randomAngleTop = angleToCenterTop + (Math.random() - 0.5) * 0.5; // Small random variation
+        const speedTop = 2 + Math.random() * 1.5; // Slower speed
+        vx = Math.cos(randomAngleTop) * speedTop;
+        vy = Math.sin(randomAngleTop) * speedTop;
+        break;
+      case 1: // Right edge
+        x = window.innerWidth + 50;
+        y = Math.random() * window.innerHeight;
+        // Calculate direction to center with some randomness
+        const angleToCenterRight = Math.atan2(centerY - y, centerX - x);
+        const randomAngleRight = angleToCenterRight + (Math.random() - 0.5) * 0.5; // Small random variation
+        const speedRight = 2 + Math.random() * 1.5; // Slower speed
+        vx = Math.cos(randomAngleRight) * speedRight;
+        vy = Math.sin(randomAngleRight) * speedRight;
+        break;
+      case 2: // Bottom edge
+        x = Math.random() * window.innerWidth;
+        y = window.innerHeight + 50;
+        // Calculate direction to center with some randomness
+        const angleToCenterBottom = Math.atan2(centerY - y, centerX - x);
+        const randomAngleBottom = angleToCenterBottom + (Math.random() - 0.5) * 0.5; // Small random variation
+        const speedBottom = 2 + Math.random() * 1.5; // Slower speed
+        vx = Math.cos(randomAngleBottom) * speedBottom;
+        vy = Math.sin(randomAngleBottom) * speedBottom;
+        break;
+      case 3: // Left edge
+        x = -50;
+        y = Math.random() * window.innerHeight;
+        // Calculate direction to center with some randomness
+        const angleToCenterLeft = Math.atan2(centerY - y, centerX - x);
+        const randomAngleLeft = angleToCenterLeft + (Math.random() - 0.5) * 0.5; // Small random variation
+        const speedLeft = 2 + Math.random() * 1.5; // Slower speed
+        vx = Math.cos(randomAngleLeft) * speedLeft;
+        vy = Math.sin(randomAngleLeft) * speedLeft;
+        break;
+    }
+    
+    const newBomb = {
+      id: Date.now(),
+      x,
+      y,
+      vx,
+      vy,
+      isExploding: false,
+      lifetime: 0,
+      maxLifetime: 15000, // 15 seconds maximum lifetime
+      gravity: 0.03 // Reduced gravity for slower vertical acceleration
+    };
+    
+    setBombs(prev => [...prev, newBomb]);
+  };
+  
+  // Function to handle bomb explosion
+  const handleBombExplode = (bombId) => {
+    // Add bomb to exploding bombs
+    setExplodingBombs(prev => [...prev, bombId]);
+    
+    // Remove bomb after explosion animation
+    setTimeout(() => {
+      setBombs(prev => prev.filter(bomb => bomb.id !== bombId));
+      setExplodingBombs(prev => prev.filter(id => id !== bombId));
+    }, 500);
+    
+    // End the game
+    setGameStatus("game-over-screen");
+  };
 
   useEffect(() => {
     
@@ -135,6 +232,8 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           console.log('Collision 1 detected');
           currentScoreRef.current += 1;
           setScore(currentScoreRef.current);
+          setIsColliding(true); // Set collision state to true
+          
           // Compute bounce angle and preserve momentum
           const angle = Math.atan2(dy1, dx1);
           const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
@@ -146,6 +245,8 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           // Move ball slightly outside collision radius to prevent repeat bouncing
           x =  fingerRef.current.x - Math.cos(angle) * (collisionRadius + 2);
           y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
+        } else {
+          setIsColliding(false); // Reset collision state when not colliding
         }
         // if (dist2 < collisionRadius) {
         //   console.log('Collision 2 detected');
@@ -188,6 +289,58 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           setRenderBall(prev => prev);
           
         }
+        
+        // Update bombs
+        setBombs(prev => {
+          return prev.map(bomb => {
+            // Apply gravity to vertical velocity
+            const newVy = bomb.vy + bomb.gravity;
+            
+            // Move bomb with parabolic motion
+            let newX = bomb.x + bomb.vx;
+            let newY = bomb.y + newVy;
+            
+            // Update lifetime
+            const newLifetime = bomb.lifetime + 16; // Assuming 60fps
+            
+            // Remove bomb if it's been alive too long or is off-screen
+            if (newLifetime > bomb.maxLifetime || 
+                newX < -100 || newX > window.innerWidth + 100 || 
+                newY < -100 || newY > window.innerHeight + 100) {
+              return null; // This bomb will be filtered out
+            }
+            
+            // Check collision with balloon
+            const dx = newX - x;
+            const dy = newY - y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Use a more precise collision radius and add a small buffer to prevent false collisions
+            const collisionBuffer = 5; // Small buffer to prevent edge cases
+            const effectiveBombRadius = 30; // Slightly smaller than visual size
+            const effectiveBallRadius = ballRadius - 2; // Slightly smaller than visual size
+            
+            if (dist < effectiveBallRadius + effectiveBombRadius - collisionBuffer && !bomb.isExploding) {
+              // Add a minimum distance check to prevent false collisions at high speeds
+              const minDistance = effectiveBallRadius + effectiveBombRadius - collisionBuffer;
+              if (dist > minDistance * 0.8) { // Only trigger if we're not too close to the edge
+                // Trigger explosion
+                handleBombExplode(bomb.id);
+                return { ...bomb, isExploding: true };
+              }
+            }
+            
+            return { ...bomb, x: newX, y: newY, vy: newVy, lifetime: newLifetime };
+          }).filter(bomb => bomb !== null); // Remove null bombs
+        });
+        
+        // Spawn bombs periodically
+        bombSpawnTimerRef.current += 16; // Assuming 60fps
+        if (bombSpawnTimerRef.current >= bombSpawnInterval) {
+          spawnBomb();
+          bombSpawnTimerRef.current = 0;
+        }
+        
         // end game
         if (y > window.innerHeight) {
           console.log("ENDING GAME", y);
@@ -239,7 +392,16 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
 
         }}
       />
-      <BallObject x={renderBall.x} y={renderBall.y} />
+      <BallObject x={renderBall.x} y={renderBall.y} isColliding={isColliding} />
+      {bombs.map(bomb => (
+        <BombObject 
+          key={bomb.id}
+          x={bomb.x} 
+          y={bomb.y} 
+          isExploding={explodingBombs.includes(bomb.id)}
+          onExplode={() => handleBombExplode(bomb.id)}
+        />
+      ))}
     </>
   );
 }

@@ -3,6 +3,8 @@ import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
 import BombObject from './BombObject';
 import './GameCanvas.css';
+import boing from '../assets/sprites/boing.mp3'; 
+
 
 function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const videoRef = useRef(null);
@@ -258,6 +260,9 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             setScore(currentScoreRef.current);
             setIsColliding(true); // Set collision state to true
             
+            const audio = new Audio(boing); // Create a new Audio instance
+            audio.play();
+
             // Compute bounce angle and preserve momentum
             const angle = Math.atan2(dy1, dx1);
             const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;

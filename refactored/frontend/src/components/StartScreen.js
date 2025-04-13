@@ -8,6 +8,8 @@ import scoresSprite2 from '../assets/sprites/scores2.png';
 import settingsSprite1 from '../assets/sprites/settings1.png';
 import settingsSprite2 from '../assets/sprites/settings2.png';
 import bliss from '../assets/sprites/bliss.png';
+import clickSound from '../assets/sprites/minecraft_click.mp3';
+
 
 function SpriteImage({ frames, width = 200, height = 80 }) {
   const [frame, setFrame] = useState(0);
@@ -44,9 +46,15 @@ function SpriteButton({ onClick, text, frames }) {
     return () => clearInterval(interval);
   }, []);
 
+  const handleClick = () => {
+    const audio = new Audio(clickSound); // Create a new Audio instance
+    audio.play(); // Play the sound
+    onClick(); // Trigger the button's onClick handler
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick} 
       style={{
         width: '450px',
         height: '120px',

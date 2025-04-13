@@ -279,7 +279,17 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             console.log('Collision 1 detected');
             currentScoreRef.current += 1;
             setScore(currentScoreRef.current);
-            setIsColliding(true); // Set collision state to true
+            
+            // Only set isColliding to true if it's not already true
+            // This prevents multiple wobble animations from being triggered
+            if (!isColliding) {
+              setIsColliding(true);
+              
+              // Add a delay before setting isColliding back to false
+              setTimeout(() => {
+                setIsColliding(false);
+              }, 200); // Match the wobble animation duration
+            }
             
             const audio = new Audio(boing); // Create a new Audio instance
             audio.play();
@@ -295,8 +305,6 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             // Move ball slightly outside collision radius to prevent repeat bouncing
             x =  fingerRef.current.x - Math.cos(angle) * (collisionRadius + 2);
             y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
-          } else {
-            setIsColliding(false); // Reset collision state when not colliding
           }
           // if (dist2 < collisionRadius) {
           //   console.log('Collision 2 detected');

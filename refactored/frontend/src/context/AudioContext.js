@@ -8,18 +8,13 @@ export function AudioProvider({ children }) {
   const [musicVolume, setMusicVolume] = useState(50); // Default to 50%
   const backgroundMusicRef = useRef(null);
 
-  // Initialize background music and start playing immediately
+  // Initialize background music but don't start playing immediately
   useEffect(() => {
     backgroundMusicRef.current = new Audio(backgroundMusic);
     backgroundMusicRef.current.loop = true; // Loop the background music
     
     // Set initial volume
     backgroundMusicRef.current.volume = musicVolume / 100;
-    
-    // Start playing immediately
-    backgroundMusicRef.current.play().catch(error => {
-      console.error("Error playing background music:", error);
-    });
     
     // Clean up on unmount
     return () => {
@@ -43,13 +38,22 @@ export function AudioProvider({ children }) {
     sound.play();
   };
 
+  const startBackgroundMusic = () => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.play().catch(error => {
+        console.error("Error playing background music:", error);
+      });
+    }
+  };
+
   return (
     <AudioContext.Provider value={{ 
       sfxVolume, 
       setSfxVolume, 
       musicVolume, 
       setMusicVolume, 
-      playSound 
+      playSound,
+      startBackgroundMusic
     }}>
       {children}
     </AudioContext.Provider>

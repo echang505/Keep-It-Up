@@ -2,8 +2,6 @@ import React from 'react';
 import SaveScoreForm from './SaveScoreForm';
 import bliss from '../assets/sprites/bliss.png';
 
-import bliss from '../assets/sprites/bliss.png';
-
 function GameOverScreen({ setGameStatus, score }) {
     const [showSaveForm, setShowSaveForm] = React.useState(false);
     

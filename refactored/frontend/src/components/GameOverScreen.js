@@ -81,6 +81,7 @@ function SpriteButton({ onClick, text, frames }) {
 
 function GameOverScreen({ setGameStatus, score }) {
     const [showSaveForm, setShowSaveForm] = React.useState(false);
+    const [scoreSavedStatus, setScoreSavedStatus] = useState(false);
     
     return (
         <div
@@ -131,7 +132,7 @@ function GameOverScreen({ setGameStatus, score }) {
             >
                 {/* <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>Game Over!</h1> */}
                 <SpriteImage frames={[gameOverSprite1, gameOverSprite2]} width={700} height={200} />
-                <h2 style={{ fontSize: '3rem', margin: '0.5rem', marginBottom: '1.8rem' }}>Your Score: {score}</h2>
+                <h2 style={{ fontSize: '3rem', margin: '0.5rem', marginBottom: '1.8rem', color: 'black', textShadow: 'none'}}>Your Score: {score}</h2>
 
                 {/* <button
                     onClick={() => {
@@ -149,11 +150,13 @@ function GameOverScreen({ setGameStatus, score }) {
                 >
                     Save Score
                 </button> */}
-
-                <SpriteButton
+                {scoreSavedStatus ? <SpriteButton
+                    frames={[saveSpriteGray1, saveSpriteGray2]}
+                />:<SpriteButton
                     onClick={() => setShowSaveForm(true)}
                     frames={[saveSprite1, saveSprite2]}
-                />
+                />}
+                
                 
                 {/* <button
                     onClick={() => {
@@ -171,7 +174,7 @@ function GameOverScreen({ setGameStatus, score }) {
                 >
                     Play Again
                 </button>             */}
-
+                
                 <SpriteButton
                     onClick={() => setGameStatus("game-screen")}
                     frames={[playAgainSprite1, playAgainSprite2]}
@@ -207,7 +210,9 @@ function GameOverScreen({ setGameStatus, score }) {
                             audio.play();
                         }
 
-                        } 
+   
+
+                        setScoreSavedStatus={setScoreSavedStatus}
                     />
                 )}
             </div>

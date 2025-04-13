@@ -4,14 +4,15 @@ import BallObject from './BallObject';
 import BombObject from './BombObject';
 import BonusPointObject from './BonusPointObject';
 import './GameCanvas.css';
-import boing from '../assets/sprites/boing.mp3'; 
-
+import boing from '../assets/sprites/boing.mp3';
+import { useAudio } from '../context/AudioContext';
 
 function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const handLandmarkerRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
+  const { playSound } = useAudio();
 
   // const fingerRef = React.useRef([{ x: 0, y: 0 }, { x: 0, y: 0 }]);
   // const [fingerVelocity, setFingerVelocity] = React.useState([{ dx: 0, dy: 0 }, { dx: 0, dy: 0 }]);
@@ -291,8 +292,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
               }, 200); // Match the wobble animation duration
             }
             
-            const audio = new Audio(boing); // Create a new Audio instance
-            audio.play();
+            playSound(boing);
 
             // Compute bounce angle and preserve momentum
             const angle = Math.atan2(dy1, dx1);

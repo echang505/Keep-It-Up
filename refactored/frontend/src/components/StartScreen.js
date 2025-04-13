@@ -10,6 +10,7 @@ import settingsSprite2 from '../assets/sprites/settings2.png';
 import bliss from '../assets/sprites/bliss.png';
 // import clickSound from '../assets/sprites/minecraft_click.mp3';
 import clickSound from '../assets/sprites/mouse.mp3';
+import { useAudio } from '../context/AudioContext';
 
 
 
@@ -40,6 +41,7 @@ function SpriteImage({ frames, width = 200, height = 80 }) {
 
 function SpriteButton({ onClick, text, frames }) {
   const [frame, setFrame] = useState(0);
+  const { playSound } = useAudio();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,9 +51,8 @@ function SpriteButton({ onClick, text, frames }) {
   }, []);
 
   const handleClick = () => {
-    const audio = new Audio(clickSound); // Create a new Audio instance
-    audio.play(); // Play the sound
-    onClick(); // Trigger the button's onClick handler
+    playSound(clickSound);
+    onClick();
   };
 
   return (

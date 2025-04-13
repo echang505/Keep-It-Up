@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
 import BombObject from './BombObject';
+import BonusPointObject from './BonusPointObject';
 import './GameCanvas.css';
 import boing from '../assets/sprites/boing.mp3'; 
 
@@ -37,6 +38,11 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const [countdown, setCountdown] = useState(3);
   const [gameStarted, setGameStarted] = useState(false);
   
+  // Add bonus point state
+  const [bonusPoints, setBonusPoints] = useState([]);
+  const bonusPointTimerRef = useRef(0);
+  const bonusPointInterval = 5000; // Spawn a bonus point every 5 seconds
+  
   // Countdown effect
   useEffect(() => {
     if (countdown > 0) {
@@ -63,6 +69,8 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     bombSpawnTimerRef.current = 0;
     setCountdown(3);
     setGameStarted(false);
+    setBonusPoints([]);
+    bonusPointTimerRef.current = 0;
   }, []);
 
   // Function to spawn a new bomb
@@ -145,6 +153,19 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     
     // End the game
     setGameStatus("game-over-screen");
+  };
+
+  // Function to spawn a new bonus point
+  const spawnBonusPoint = () => {
+    const newBonusPoint = {
+      id: Date.now(),
+      x: Math.random() * (window.innerWidth - 100) + 50, // Keep away from edges
+      y: Math.random() * (window.innerHeight - 100) + 50, // Keep away from edges
+      lifetime: 0,
+      maxLifetime: 10000, // 10 seconds maximum lifetime
+    };
+    
+    setBonusPoints(prev => [...prev, newBonusPoint]);
   };
 
   useEffect(() => {
@@ -370,6 +391,40 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             bombSpawnTimerRef.current = 0;
           }
           
+          // Update bonus points
+          setBonusPoints(prev => {
+            return prev.map(bonusPoint => {
+              // Update lifetime
+              const newLifetime = bonusPoint.lifetime + 16; // Assuming 60fps
+              
+              // Remove bonus point if it's been alive too long
+              if (newLifetime > bonusPoint.maxLifetime) {
+                return null;
+              }
+              
+              // Check collision with balloon
+              const dx = bonusPoint.x - x;
+              const dy = bonusPoint.y - y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              if (dist < 50) { // Collision radius
+                // Add bonus points
+                currentScoreRef.current += 1; // Add 1 extra points
+                setScore(currentScoreRef.current);
+                return null; // Remove the bonus point
+              }
+              
+              return { ...bonusPoint, lifetime: newLifetime };
+            }).filter(bonusPoint => bonusPoint !== null);
+          });
+          
+          // Spawn bonus points periodically
+          bonusPointTimerRef.current += 16; // Assuming 60fps
+          if (currentScoreRef.current >= 0 && bonusPointTimerRef.current >= bonusPointInterval) {
+            spawnBonusPoint();
+            bonusPointTimerRef.current = 0;
+          }
+          
           // end game
           if (y > window.innerHeight) {
             console.log("ENDING GAME", y);
@@ -430,6 +485,13 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           y={bomb.y} 
           isExploding={explodingBombs.includes(bomb.id)}
           onExplode={() => handleBombExplode(bomb.id)}
+        />
+      ))}
+      {bonusPoints.map(bonusPoint => (
+        <BonusPointObject
+          key={bonusPoint.id}
+          x={bonusPoint.x}
+          y={bonusPoint.y}
         />
       ))}
       {!gameStarted && (

@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './InstructionsPopup.css';
+import { useAudio } from '../context/AudioContext';
 
 const InstructionsPopup = ({ onClose }) => {
+  const { startBackgroundMusic } = useAudio();
+
+  const handleClose = () => {
+    startBackgroundMusic();
+    onClose();
+  };
+
   return (
     <div className="instructions-overlay">
       <div className="instructions-popup">
@@ -16,7 +24,7 @@ const InstructionsPopup = ({ onClose }) => {
           </ul>
           <p>Good luck!</p>
         </div>
-        <button className="close-button" onClick={onClose}>
+        <button className="close-button" onClick={handleClose}>
           Got it!
         </button>
       </div>

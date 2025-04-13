@@ -72,6 +72,7 @@ function SpriteButton({ onClick, text, frames }) {
 
 function GameOverScreen({ setGameStatus, score }) {
     const [showSaveForm, setShowSaveForm] = React.useState(false);
+    const [scoreSavedStatus, setScoreSavedStatus] = useState(false);
     
     return (
         <div
@@ -140,11 +141,13 @@ function GameOverScreen({ setGameStatus, score }) {
                 >
                     Save Score
                 </button> */}
-
-                <SpriteButton
+                {scoreSavedStatus ? <SpriteButton
+                    frames={[saveSpriteGray1, saveSpriteGray2]}
+                />:<SpriteButton
                     onClick={() => setShowSaveForm(true)}
                     frames={[saveSprite1, saveSprite2]}
-                />
+                />}
+                
                 
                 {/* <button
                     onClick={() => {
@@ -162,7 +165,7 @@ function GameOverScreen({ setGameStatus, score }) {
                 >
                     Play Again
                 </button>             */}
-
+                
                 <SpriteButton
                     onClick={() => setGameStatus("game-screen")}
                     frames={[playAgainSprite1, playAgainSprite2]}
@@ -193,7 +196,9 @@ function GameOverScreen({ setGameStatus, score }) {
                 {showSaveForm && (
                     <SaveScoreForm 
                         score={score} 
-                        onClose={() => setShowSaveForm(false)} 
+                        onClose={() => setShowSaveForm(false)
+                        } 
+                        setScoreSavedStatus={setScoreSavedStatus}
                     />
                 )}
             </div>

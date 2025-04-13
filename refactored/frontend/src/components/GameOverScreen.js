@@ -11,7 +11,9 @@ import playAgainSprite1 from '../assets/sprites/playagain.png';
 import playAgainSprite2 from '../assets/sprites/playagain2.png';
 import mainMenu1 from '../assets/sprites/mainmenu.png';
 import mainMenu2 from '../assets/sprites/mainmenu2.png';
-import clickSound from '../assets/sprites/minecraft_click.mp3'; 
+// import clickSound from '../assets/sprites/minecraft_click.mp3'; 
+import clickSound from '../assets/sprites/mouse.mp3';
+
 
 
 function SpriteImage({ frames, width = 200, height = 80 }) {

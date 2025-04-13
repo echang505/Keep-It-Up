@@ -4,7 +4,9 @@ import leaderboard2 from '../assets/sprites/leaderboard2.png';
 import backSprite1 from '../assets/sprites/back1.png';
 import backSprite2 from '../assets/sprites/back2.png';
 import bliss from '../assets/sprites/bliss.png';
-import clickSound from '../assets/sprites/minecraft_click.mp3'; // Import the sound file
+// import clickSound from '../assets/sprites/minecraft_click.mp3'; 
+import clickSound from '../assets/sprites/mouse.mp3';
+
 
 
 function Scoreboard({setGameStatus}) {

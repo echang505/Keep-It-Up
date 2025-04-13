@@ -4,7 +4,9 @@ import settings1 from '../assets/sprites/settingsTitle1.png';
 import settings2 from '../assets/sprites/settingsTitle2.png';
 import backSprite1 from '../assets/sprites/back1.png';
 import backSprite2 from '../assets/sprites/back2.png';
-import clickSound from '../assets/sprites/minecraft_click.mp3';
+// import clickSound from '../assets/sprites/minecraft_click.mp3';
+import clickSound from '../assets/sprites/mouse.mp3';
+
 
 
 function SpriteImage({ frames, width = 170, height = 50 }) {

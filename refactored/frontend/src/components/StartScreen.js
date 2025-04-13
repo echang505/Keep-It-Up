@@ -86,7 +86,16 @@ function StartScreen({ setGameStatus }) {
       </button>
 
   return (
-    <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
+    <div style={{ 
+      height: '100vh', 
+      width: '100vw', 
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      overflow: 'hidden'
+    }}>
       {/* Background Layer */}
       <div
         style={{

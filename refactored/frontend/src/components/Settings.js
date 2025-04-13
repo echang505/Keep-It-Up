@@ -1,5 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import bliss from '../assets/sprites/bliss.png';
+import settings1 from '../assets/sprites/settingsTitle1.png';
+import settings2 from '../assets/sprites/settingsTitle2.png';
+import backSprite1 from '../assets/sprites/back1.png';
+import backSprite2 from '../assets/sprites/back2.png';
+
+function SpriteImage({ frames, width = 170, height = 50 }) {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame(prev => (prev === 0 ? 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundImage: `url(${frames[frame]})`,
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        marginTop: '-180px'
+      }}
+    />
+  );
+}
+
+function SpriteButton({ onClick, text, frames }) {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame(prev => (prev === 0 ? 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '370px',
+        height: '110px',
+        backgroundImage: `url(${frames[frame]})`,
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'black',
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        margin: '2rem 0',
+      }}
+    >
+      {text}
+    </button>
+  );
+}
 
 function Settings({setGameStatus}) {
   const [volume, setVolume] = useState(50);
@@ -57,7 +118,8 @@ function Settings({setGameStatus}) {
           justifyContent: 'center',
         }}
       >
-        <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>SETTINGS</h1>
+        {/* <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>SETTINGS</h1> */}
+        <SpriteImage frames={[settings1, settings2]} width={700} height={200} />
         
         <div
           style={{
@@ -86,7 +148,7 @@ function Settings({setGameStatus}) {
           </div>
         </div>
 
-        <button
+        {/* <button
           onClick={() => setGameStatus("start-screen")}
           style={{
             fontSize: '2rem',
@@ -99,7 +161,11 @@ function Settings({setGameStatus}) {
           }}
         >
           BACK
-        </button>
+        </button> */}
+        <SpriteButton
+            onClick={() => setGameStatus("start-screen")}
+            frames={[backSprite1, backSprite2]}
+        />
       </div>
     </div>
   );

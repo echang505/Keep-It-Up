@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
 import BombObject from './BombObject';
+import './GameCanvas.css';
 
 function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const videoRef = useRef(null);
@@ -20,7 +21,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const centerY = window.innerHeight / 2;
   const initialBallY = centerY - 100; // Spawn 100 pixels above center
   
-  const ballRef = useRef({ x: centerX, y: initialBallY, vx: 0, vy: 0.5 }); // Initial downward momentum only
+  const ballRef = useRef({ x: centerX, y: initialBallY, vx: 0, vy: 0 }); // No initial velocity during countdown
   const [renderBall, setRenderBall] = React.useState({ x: centerX, y: initialBallY });
   const [isColliding, setIsColliding] = React.useState(false);
   
@@ -30,15 +31,36 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const bombSpawnTimerRef = useRef(0);
   const bombSpawnInterval = 2000; // Spawn a bomb every 2 seconds
   
+  // Countdown state
+  const [countdown, setCountdown] = useState(3);
+  const [gameStarted, setGameStarted] = useState(false);
+  
+  // Countdown effect
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      // Start the game after countdown reaches 0
+      setGameStarted(true);
+      // Set initial downward velocity
+      ballRef.current.vy = 0.5;
+    }
+  }, [countdown]);
+  
   useEffect(() => {
     // Reset refs and state on (re)mount
-    ballRef.current = { x: centerX, y: initialBallY, vx: 0, vy: 0.5 }; // Initial downward momentum only
+    ballRef.current = { x: centerX, y: initialBallY, vx: 0, vy: 0 }; // No initial velocity during countdown
     currentScoreRef.current = 0;
     setScore(0);
     setIsColliding(false);
     setBombs([]);
     setExplodingBombs([]);
     bombSpawnTimerRef.current = 0;
+    setCountdown(3);
+    setGameStarted(false);
   }, []);
 
   // Function to spawn a new bomb
@@ -212,140 +234,143 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           lastVideoTimeRef.current = now;
         }
 
-        // Ball movement
-        // Ball physics using ref
-        let { x, y, vx, vy } = ballRef.current;
-        x += vx;
-        y += vy;
-        vy += 0.07; // Increased gravity for lower bounces
-        
-        const dx1 = fingerRef.current.x - x;
-        const dy1 = fingerRef.current.y - y;
-        const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-        // const dx2 = fingerRef.current[1].x - x;
-        // const dy2 = fingerRef.current[1].y - y;
-        // const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-        const collisionRadius = 35;
-        // console.log(fingerRef.current.x, fingerRef.current.y, ballRef.current.x, ballRef.current.y);
-        
-        if (dist1 < collisionRadius) {
-          console.log('Collision 1 detected');
-          currentScoreRef.current += 1;
-          setScore(currentScoreRef.current);
-          setIsColliding(true); // Set collision state to true
+        // Only update ball physics if game has started
+        if (gameStarted) {
+          // Ball movement
+          // Ball physics using ref
+          let { x, y, vx, vy } = ballRef.current;
+          x += vx;
+          y += vy;
+          vy += 0.07; // Increased gravity for lower bounces
           
-          // Compute bounce angle and preserve momentum
-          const angle = Math.atan2(dy1, dx1);
-          const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
-          const bounceStrength = Math.max(7, Math.min(fingerSpeed * 0.4, 12)); // Reduced bounce strength
-
-          vx = -Math.cos(angle) * bounceStrength;
-          vy = -Math.sin(angle) * bounceStrength;
-
-          // Move ball slightly outside collision radius to prevent repeat bouncing
-          x =  fingerRef.current.x - Math.cos(angle) * (collisionRadius + 2);
-          y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
-        } else {
-          setIsColliding(false); // Reset collision state when not colliding
-        }
-        // if (dist2 < collisionRadius) {
-        //   console.log('Collision 2 detected');
-        //   currentScoreRef.current += 1;
-        //   setScore(currentScoreRef.current);
-        //   // Compute bounce angle and preserve momentum
-        //   const angle = Math.atan2(dy2, dx2);
-        //   const fingerSpeed = Math.sqrt(fingerVelocity[1].dx ** 2 + fingerVelocity[1].dy ** 2) || 1;
-        //   const bounceStrength = Math.max(8, Math.min(fingerSpeed * 0.5, 15));
-
-        //   vx = -Math.cos(angle) * bounceStrength;
-        //   vy = -Math.sin(angle) * bounceStrength;
-
-        //   // Move ball slightly outside collision radius to prevent repeat bouncing
-        //   x =  fingerRef.current[1].x - Math.cos(angle) * (collisionRadius + 2);
-        //   y =  fingerRef.current[1].y - Math.sin(angle) * (collisionRadius + 2);
-        // }
-        // Bounce off the sides
-        const ballRadius = 25;
-        if (x - ballRadius <= 0) {
-          x = ballRadius;
-          vx = Math.abs(vx) * 0.8; // Bounce with slight energy loss
-        } else if (x + ballRadius >= window.innerWidth) {
-          x = window.innerWidth - ballRadius;
-          vx = -Math.abs(vx) * 0.8; // Bounce with slight energy loss
-        }
-        
-        // Allow vertical movement to go off screen
-        ballRef.current = {
-          x: x,
-          y: y, // Allow y to go off screen
-          vx,
-          vy,
-        };
-
-        // Only render the ball if it's within the visible area
-        if (y >= -50 && y <= window.innerHeight + 50) {
-          setRenderBall({ x: ballRef.current.x, y: ballRef.current.y });
-        } else {
-          setRenderBall(prev => prev);
+          const dx1 = fingerRef.current.x - x;
+          const dy1 = fingerRef.current.y - y;
+          const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+          // const dx2 = fingerRef.current[1].x - x;
+          // const dy2 = fingerRef.current[1].y - y;
+          // const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+          const collisionRadius = 35;
+          // console.log(fingerRef.current.x, fingerRef.current.y, ballRef.current.x, ballRef.current.y);
           
-        }
-        
-        // Update bombs
-        setBombs(prev => {
-          return prev.map(bomb => {
-            // Apply gravity to vertical velocity
-            const newVy = bomb.vy + bomb.gravity;
+          if (dist1 < collisionRadius) {
+            console.log('Collision 1 detected');
+            currentScoreRef.current += 1;
+            setScore(currentScoreRef.current);
+            setIsColliding(true); // Set collision state to true
             
-            // Move bomb with parabolic motion
-            let newX = bomb.x + bomb.vx;
-            let newY = bomb.y + newVy;
+            // Compute bounce angle and preserve momentum
+            const angle = Math.atan2(dy1, dx1);
+            const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
+            const bounceStrength = Math.max(7, Math.min(fingerSpeed * 0.4, 12)); // Reduced bounce strength
+
+            vx = -Math.cos(angle) * bounceStrength;
+            vy = -Math.sin(angle) * bounceStrength;
+
+            // Move ball slightly outside collision radius to prevent repeat bouncing
+            x =  fingerRef.current.x - Math.cos(angle) * (collisionRadius + 2);
+            y =  fingerRef.current.y - Math.sin(angle) * (collisionRadius + 2);
+          } else {
+            setIsColliding(false); // Reset collision state when not colliding
+          }
+          // if (dist2 < collisionRadius) {
+          //   console.log('Collision 2 detected');
+          //   currentScoreRef.current += 1;
+          //   setScore(currentScoreRef.current);
+          //   // Compute bounce angle and preserve momentum
+          //   const angle = Math.atan2(dy2, dx2);
+          //   const fingerSpeed = Math.sqrt(fingerVelocity[1].dx ** 2 + fingerVelocity[1].dy ** 2) || 1;
+          //   const bounceStrength = Math.max(8, Math.min(fingerSpeed * 0.5, 15));
+
+          //   vx = -Math.cos(angle) * bounceStrength;
+          //   vy = -Math.sin(angle) * bounceStrength;
+
+          //   // Move ball slightly outside collision radius to prevent repeat bouncing
+          //   x =  fingerRef.current[1].x - Math.cos(angle) * (collisionRadius + 2);
+          //   y =  fingerRef.current[1].y - Math.sin(angle) * (collisionRadius + 2);
+          // }
+          // Bounce off the sides
+          const ballRadius = 25;
+          if (x - ballRadius <= 0) {
+            x = ballRadius;
+            vx = Math.abs(vx) * 0.8; // Bounce with slight energy loss
+          } else if (x + ballRadius >= window.innerWidth) {
+            x = window.innerWidth - ballRadius;
+            vx = -Math.abs(vx) * 0.8; // Bounce with slight energy loss
+          }
+          
+          // Allow vertical movement to go off screen
+          ballRef.current = {
+            x: x,
+            y: y, // Allow y to go off screen
+            vx,
+            vy,
+          };
+
+          // Only render the ball if it's within the visible area
+          if (y >= -50 && y <= window.innerHeight + 50) {
+            setRenderBall({ x: ballRef.current.x, y: ballRef.current.y });
+          } else {
+            setRenderBall(prev => prev);
             
-            // Update lifetime
-            const newLifetime = bomb.lifetime + 16; // Assuming 60fps
-            
-            // Remove bomb if it's been alive too long or is off-screen
-            if (newLifetime > bomb.maxLifetime || 
-                newX < -100 || newX > window.innerWidth + 100 || 
-                newY < -100 || newY > window.innerHeight + 100) {
-              return null; // This bomb will be filtered out
-            }
-            
-            // Check collision with balloon
-            const dx = newX - x;
-            const dy = newY - y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            // Use a more precise collision radius and add a small buffer to prevent false collisions
-            const collisionBuffer = 5; // Small buffer to prevent edge cases
-            const effectiveBombRadius = 30; // Slightly smaller than visual size
-            const effectiveBallRadius = ballRadius - 2; // Slightly smaller than visual size
-            
-            if (dist < effectiveBallRadius + effectiveBombRadius - collisionBuffer && !bomb.isExploding) {
-              // Add a minimum distance check to prevent false collisions at high speeds
-              const minDistance = effectiveBallRadius + effectiveBombRadius - collisionBuffer;
-              if (dist > minDistance * 0.8) { // Only trigger if we're not too close to the edge
-                // Trigger explosion
-                handleBombExplode(bomb.id);
-                return { ...bomb, isExploding: true };
+          }
+          
+          // Update bombs
+          setBombs(prev => {
+            return prev.map(bomb => {
+              // Apply gravity to vertical velocity
+              const newVy = bomb.vy + bomb.gravity;
+              
+              // Move bomb with parabolic motion
+              let newX = bomb.x + bomb.vx;
+              let newY = bomb.y + newVy;
+              
+              // Update lifetime
+              const newLifetime = bomb.lifetime + 16; // Assuming 60fps
+              
+              // Remove bomb if it's been alive too long or is off-screen
+              if (newLifetime > bomb.maxLifetime || 
+                  newX < -100 || newX > window.innerWidth + 100 || 
+                  newY < -100 || newY > window.innerHeight + 100) {
+                return null; // This bomb will be filtered out
               }
-            }
-            
-            return { ...bomb, x: newX, y: newY, vy: newVy, lifetime: newLifetime };
-          }).filter(bomb => bomb !== null); // Remove null bombs
-        });
-        
-        // Spawn bombs periodically
-        bombSpawnTimerRef.current += 16; // Assuming 60fps
-        if (currentScoreRef.current >= 5 && bombSpawnTimerRef.current >= bombSpawnInterval) {
-          spawnBomb();
-          bombSpawnTimerRef.current = 0;
-        }
-        
-        // end game
-        if (y > window.innerHeight) {
-          console.log("ENDING GAME", y);
-          setGameStatus("game-over-screen");
-          return; // Break out of the render loop
+              
+              // Check collision with balloon
+              const dx = newX - x;
+              const dy = newY - y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              // Use a more precise collision radius and add a small buffer to prevent false collisions
+              const collisionBuffer = 5; // Small buffer to prevent edge cases
+              const effectiveBombRadius = 30; // Slightly smaller than visual size
+              const effectiveBallRadius = ballRadius - 2; // Slightly smaller than visual size
+              
+              if (dist < effectiveBallRadius + effectiveBombRadius - collisionBuffer && !bomb.isExploding) {
+                // Add a minimum distance check to prevent false collisions at high speeds
+                const minDistance = effectiveBallRadius + effectiveBombRadius - collisionBuffer;
+                if (dist > minDistance * 0.8) { // Only trigger if we're not too close to the edge
+                  // Trigger explosion
+                  handleBombExplode(bomb.id);
+                  return { ...bomb, isExploding: true };
+                }
+              }
+              
+              return { ...bomb, x: newX, y: newY, vy: newVy, lifetime: newLifetime };
+            }).filter(bomb => bomb !== null); // Remove null bombs
+          });
+          
+          // Spawn bombs periodically
+          bombSpawnTimerRef.current += 16; // Assuming 60fps
+          if (currentScoreRef.current >= 5 && bombSpawnTimerRef.current >= bombSpawnInterval) {
+            spawnBomb();
+            bombSpawnTimerRef.current = 0;
+          }
+          
+          // end game
+          if (y > window.innerHeight) {
+            console.log("ENDING GAME", y);
+            setGameStatus("game-over-screen");
+            return; // Break out of the render loop
+          }
         }
         
         requestAnimationFrame(() => renderLoop());
@@ -355,7 +380,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     };
     
     initialize();
-  }, []);
+  }, [gameStarted]);
 
   return (
     <>
@@ -402,6 +427,11 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           onExplode={() => handleBombExplode(bomb.id)}
         />
       ))}
+      {!gameStarted && (
+        <div className="countdown-overlay">
+          <div className="countdown-number">{countdown}</div>
+        </div>
+      )}
     </>
   );
 }

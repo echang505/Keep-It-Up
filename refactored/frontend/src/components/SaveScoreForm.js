@@ -17,7 +17,7 @@ function SaveScoreForm({ score, onClose }) {
       onClose();
     }, 3000); // 3 seconds timeout
 
-    fetch('http://127.0.0.1:5000/submit/keepitup', {
+    fetch('http://127.0.0.1:5001/post/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, score }),

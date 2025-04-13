@@ -1,65 +1,138 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import logoSprite1 from '../assets/sprites/newlogo1.png';
+import logoSprite2 from '../assets/sprites/newlogo2.png';
+import startSprite1 from '../assets/sprites/start1.png';
+import startSprite2 from '../assets/sprites/start2.png';
+import scoresSprite1 from '../assets/sprites/scores1.png';
+import scoresSprite2 from '../assets/sprites/scores2.png';
+import settingsSprite1 from '../assets/sprites/settings1.png';
+import settingsSprite2 from '../assets/sprites/settings2.png';
+import bliss from '../assets/sprites/bliss.png';
 
-function StartScreen({setGameStatus}) {
-  console.log("StartScreen");
+function SpriteImage({ frames, width = 200, height = 80 }) {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame(prev => (prev === 0 ? 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div
       style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        // backgroundImage: 'url("/background.jpg")',
-        // backgroundSize: 'cover',
-        fontFamily: 'Comic Sans MS, sans-serif',
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundImage: `url(${frames[frame]})`,
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+      }}
+    />
+  );
+}
+
+function SpriteButton({ onClick, text, frames }) {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame(prev => (prev === 0 ? 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '400px',
+        height: '140px',
+        backgroundImage: `url(${frames[frame]})`,
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'black',
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        margin: '2rem 0',
       }}
     >
-      <h1 style={{ fontSize: '4rem', margin: '0.5rem' }}>KEEP IT UP!</h1>
+      {text}
+    </button>
+  );
+}
 
-      <button
-        onClick={() => {
-            setGameStatus("game-screen");}}
+function StartScreen({ setGameStatus }) {
+  console.log("StartScreen");
+
+  return (
+    <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
+      {/* Background Layer */}
+      <div
         style={{
-          fontSize: '2rem',
-          padding: '10px 30px',
-          borderRadius: '20px',
-          margin: '1rem',
-          border: '5px solid black',
-          background: 'white',
-          cursor: 'pointer',
+          backgroundImage: `url(${bliss})`,
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          opacity: 0.3,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          height: '100%',
+          width: '100%',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Foreground Content */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          height: '100%',
+          width: '100%',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          fontFamily: 'Comic Sans MS, sans-serif',
         }}
       >
-        START
-      </button>
+        {/* Left Side: Logo */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <SpriteImage frames={[logoSprite1, logoSprite2]} width={650} height={650} />
+        </div>
 
-      <button
-        onClick={() => setGameStatus("scores-screen")}
-        style={{
-          fontSize: '2rem',
-          padding: '10px 30px',
-          borderRadius: '20px',
-          margin: '1rem',
-          border: '5px solid black',
-          background: 'white',
-        }}
-      >
-        SCORES
-      </button>
-
-      <button
-        onClick={() => setGameStatus("settings-screen")}
-        style={{
-          fontSize: '2rem',
-          padding: '10px 30px',
-          borderRadius: '20px',
-          margin: '1rem',
-          border: '5px solid black',
-          background: 'white',
-        }}
-      >
-        SETTINGS
-      </button>
+        {/* Right Side: Buttons */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <SpriteButton
+            onClick={() => setGameStatus("game-screen")}
+            frames={[startSprite1, startSprite2]}
+          />
+          <SpriteButton
+            onClick={() => setGameStatus("scores-screen")}
+            frames={[scoresSprite1, scoresSprite2]}
+          />
+          <SpriteButton
+            onClick={() => setGameStatus("settings-screen")}
+            frames={[settingsSprite1, settingsSprite2]}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -15,20 +15,24 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const fingerRef = React.useRef({ x: 0, y: 0 });
   const [fingerVelocity, setFingerVelocity] = React.useState({ dx: 0, dy: 0 });
 
-
-  const ballRef = useRef({ x: 320, y: 240, vx: 2, vy: -.01 });
-  const [renderBall, setRenderBall] = React.useState({ x: 320, y: 240 });
+  // Calculate center of screen for initial balloon position
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  const initialBallY = centerY - 100; // Spawn 100 pixels above center
+  
+  const ballRef = useRef({ x: centerX, y: initialBallY, vx: 0, vy: 0.5 }); // Initial downward momentum only
+  const [renderBall, setRenderBall] = React.useState({ x: centerX, y: initialBallY });
   const [isColliding, setIsColliding] = React.useState(false);
   
   // Bomb state
   const [bombs, setBombs] = React.useState([]);
   const [explodingBombs, setExplodingBombs] = React.useState([]);
   const bombSpawnTimerRef = useRef(0);
-  const bombSpawnInterval = 2000; // Spawn a bomb every 5 seconds
+  const bombSpawnInterval = 2000; // Spawn a bomb every 2 seconds
   
   useEffect(() => {
     // Reset refs and state on (re)mount
-    ballRef.current = { x: 320, y: 240, vx: 2, vy: -0.01 };
+    ballRef.current = { x: centerX, y: initialBallY, vx: 0, vy: 0.5 }; // Initial downward momentum only
     currentScoreRef.current = 0;
     setScore(0);
     setIsColliding(false);
@@ -44,10 +48,6 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     
     let x, y;
     let vx, vy;
-    
-    // Calculate center of screen
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
     
     // Set initial position and velocity based on which edge the bomb spawns from
     switch (edge) {

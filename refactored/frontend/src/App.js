@@ -5,10 +5,12 @@ import StartScreen from './components/StartScreen';
 import Scoreboard from './components/Scoreboard';
 import Settings from './components/Settings';
 import GameOverScreen from './components/GameOverScreen';
+import ObjectSelectionScreen from './components/ObjectSelectionScreen';
 
 
 function App() {
   // "start-screen": start screen
+  // "object-selection-screen": object selection screen
   // "game-screen": playing game
   // "scores-screen": scores screen
   // "settings-screen": settings screen
@@ -16,12 +18,20 @@ function App() {
   const [gameStatus, setGameStatus] = React.useState("start-screen");
   const [score, setScore] = React.useState(0); 
   const currentScoreRef = React.useRef(0); 
+  const [selectedObject, setSelectedObject] = React.useState("balloon"); // Default to balloon
 
   let content;
   if (gameStatus === "start-screen") {
     content = (
       <StartScreen
         setGameStatus={setGameStatus}
+      />
+    );
+  } else if (gameStatus === "object-selection-screen") {
+    content = (
+      <ObjectSelectionScreen
+        setGameStatus={setGameStatus}
+        setSelectedObject={setSelectedObject}
       />
     );
   } else if (gameStatus === "game-screen") {
@@ -31,6 +41,7 @@ function App() {
           setGameStatus={setGameStatus}
           currentScoreRef={currentScoreRef}
           setScore={setScore}
+          selectedObject={selectedObject}
         />
         <ScoreMessage
             score={score} 

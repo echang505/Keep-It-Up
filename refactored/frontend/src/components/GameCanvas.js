@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
+import PetRockObject from './PetRockObject';
+import BouncyBallObject from './BouncyBallObject';
 import BombObject from './BombObject';
 import BonusPointObject from './BonusPointObject';
 import LaserObject from './LaserObject';
@@ -8,7 +10,7 @@ import './GameCanvas.css';
 import boing from '../assets/sprites/boing.mp3';
 import { useAudio } from '../context/AudioContext';
 
-function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
+function GameCanvas({setGameStatus, currentScoreRef, setScore, selectedObject}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const handLandmarkerRef = useRef(null);
@@ -248,7 +250,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           // for (let i = 0; i < 2; i++){
           //   if (results.landmarks && results.landmarks[i]) {
           //     let tip = results.landmarks[i][4]; // 8 for indexs finger tip
-          //     tipCoords = {
+          //     let tipCoords = {
           //       x: canvasElement.width - tip.x * canvasElement.width, // ← flip X
           //       y: tip.y * canvasElement.height,
           //     };
@@ -292,7 +294,14 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           let { x, y, vx, vy } = ballRef.current;
           x += vx;
           y += vy;
-          vy += 0.07; // Increased gravity for lower bounces
+          
+          // Adjust gravity based on selected object
+          const gravity = selectedObject === 'balloon' 
+            ? 0.07 
+            : selectedObject === 'petrock' 
+              ? 0.25 
+              : 0.15; // Moderate gravity for bouncy ball
+          vy += gravity;
           
           const dx1 = fingerRef.current.x - x;
           const dy1 = fingerRef.current.y - y;
@@ -324,7 +333,13 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
             // Compute bounce angle and preserve momentum
             const angle = Math.atan2(dy1, dx1);
             const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
-            const bounceStrength = Math.max(7, Math.min(fingerSpeed * 0.4, 12)); // Reduced bounce strength
+            
+            // Adjust bounce strength based on selected object
+            const bounceStrength = selectedObject === 'balloon' 
+              ? Math.max(7, Math.min(fingerSpeed * 0.4, 12)) // Balloon bounces more
+              : selectedObject === 'petrock'
+                ? Math.max(8, Math.min(fingerSpeed * 0.5, 15)) // Pet rock bounces
+                : Math.max(10, Math.min(fingerSpeed * 0.6, 18)); // High bounce for bouncy ball
 
             vx = -Math.cos(angle) * bounceStrength;
             vy = -Math.sin(angle) * bounceStrength;
@@ -516,7 +531,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
     };
     
     initialize();
-  }, [gameStarted]);
+  }, [gameStarted, selectedObject]);
 
   return (
     <>
@@ -553,7 +568,13 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
 
         }}
       />
-      <BallObject x={renderBall.x} y={renderBall.y} isColliding={isColliding} />
+      {selectedObject === 'balloon' ? (
+        <BallObject x={renderBall.x} y={renderBall.y} isColliding={isColliding} />
+      ) : selectedObject === 'petrock' ? (
+        <PetRockObject x={renderBall.x} y={renderBall.y} isColliding={isColliding} />
+      ) : (
+        <BouncyBallObject x={renderBall.x} y={renderBall.y} isColliding={isColliding} />
+      )}
       {bombs.map(bomb => (
         <BombObject 
           key={bomb.id}

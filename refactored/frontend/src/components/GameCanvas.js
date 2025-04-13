@@ -2,7 +2,9 @@ import React, { useRef, useEffect } from 'react';
 import * as vision from "@mediapipe/tasks-vision";
 import BallObject from './BallObject';
 
-function GameCanvas() {
+
+
+function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const handLandmarkerRef = useRef(null);
@@ -13,8 +15,15 @@ function GameCanvas() {
 
   const ballRef = useRef({ x: 320, y: 240, vx: 2, vy: -.01 });
   const [renderBall, setRenderBall] = React.useState({ x: 320, y: 240 });
+  useEffect(() => {
+    // Reset refs and state on (re)mount
+    ballRef.current = { x: 320, y: 240, vx: 2, vy: -0.01 };
+    currentScoreRef.current = 0;
+    setScore(0);
+  }, []);
 
   useEffect(() => {
+    
     const initialize = async () => {
       const videoElement = videoRef.current;
       const canvasElement = canvasRef.current;
@@ -93,10 +102,12 @@ function GameCanvas() {
         const dy = fingerRef.current.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const collisionRadius = 35;
-        console.log(fingerRef.current.x, fingerRef.current.y, ballRef.current.x, ballRef.current.y);
+        // console.log(fingerRef.current.x, fingerRef.current.y, ballRef.current.x, ballRef.current.y);
         
         if (dist < collisionRadius) {
           console.log('Collision detected');
+          currentScoreRef.current += 1;
+          setScore(currentScoreRef.current);
           // Compute bounce angle and preserve momentum
           const angle = Math.atan2(dy, dx);
           const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
@@ -132,8 +143,14 @@ function GameCanvas() {
         if (y >= -50 && y <= window.innerHeight + 50) {
           setRenderBall({ x: ballRef.current.x, y: ballRef.current.y });
         } else {
-          // Keep the ball in the render state but don't update its position
           setRenderBall(prev => prev);
+          
+        }
+        // end game
+        if (y > window.innerHeight) {
+          console.log("ENDING GAME", y);
+          setGameStatus("game-over-screen");
+          return; // Break out of the render loop
         }
         
         requestAnimationFrame(() => renderLoop());
@@ -141,7 +158,7 @@ function GameCanvas() {
 
       renderLoop();
     };
-
+    
     initialize();
   }, []);
 

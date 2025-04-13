@@ -19,9 +19,6 @@ function SpriteImage({ frames, width = 200, height = 80 }) {
     return () => clearInterval(interval);
   }, []);
 
-
-function StartScreen({ setGameStatus }) {
-  console.log("StartScreen");
   return (
     <div
       style={{
@@ -35,6 +32,7 @@ function StartScreen({ setGameStatus }) {
     />
   );
 }
+
 
 function SpriteButton({ onClick, text, frames }) {
   const [frame, setFrame] = useState(0);

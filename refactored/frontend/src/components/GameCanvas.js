@@ -120,7 +120,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
         let { x, y, vx, vy } = ballRef.current;
         x += vx;
         y += vy;
-        vy += 0.05; // gravity
+        vy += 0.07; // Increased gravity for lower bounces
         
         const dx1 = fingerRef.current.x - x;
         const dy1 = fingerRef.current.y - y;
@@ -138,7 +138,7 @@ function GameCanvas({setGameStatus, currentScoreRef, setScore}) {
           // Compute bounce angle and preserve momentum
           const angle = Math.atan2(dy1, dx1);
           const fingerSpeed = Math.sqrt(fingerVelocity.dx ** 2 + fingerVelocity.dy ** 2) || 1;
-          const bounceStrength = Math.max(8, Math.min(fingerSpeed * 0.5, 15));
+          const bounceStrength = Math.max(7, Math.min(fingerSpeed * 0.4, 12)); // Reduced bounce strength
 
           vx = -Math.cos(angle) * bounceStrength;
           vy = -Math.sin(angle) * bounceStrength;

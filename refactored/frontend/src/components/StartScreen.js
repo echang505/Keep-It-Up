@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import logoSprite1 from '../assets/sprites/newlogo1.png';
-import logoSprite2 from '../assets/sprites/newlogo2.png';
+import logoSprite1 from '../assets/sprites/logo1.png';
+import logoSprite2 from '../assets/sprites/logo2.png';
 import startSprite1 from '../assets/sprites/start1.png';
 import startSprite2 from '../assets/sprites/start2.png';
 import scoresSprite1 from '../assets/sprites/scores1.png';
@@ -48,8 +48,8 @@ function SpriteButton({ onClick, text, frames }) {
     <button
       onClick={onClick}
       style={{
-        width: '400px',
-        height: '140px',
+        width: '450px',
+        height: '120px',
         backgroundImage: `url(${frames[frame]})`,
         backgroundColor: 'transparent',
         border: 'none',
@@ -130,7 +130,7 @@ function StartScreen({ setGameStatus }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'right',
           }}
         >
           <SpriteImage frames={[logoSprite1, logoSprite2]} width={650} height={650} />

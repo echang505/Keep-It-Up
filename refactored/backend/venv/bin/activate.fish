@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/mnt/d/Documents/UMD/Senior/BITCAMP2025/Keep-It-Up/refactored/backend/venv"
+set -gx VIRTUAL_ENV "/Users/jonathanxu/bitcamp/Keep-It-Up/refactored/backend/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

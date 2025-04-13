@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections.abc as c
 import hashlib
 import typing as t
 from collections.abc import MutableMapping
@@ -14,14 +13,11 @@ from werkzeug.datastructures import CallbackDict
 from .json.tag import TaggedJSONSerializer
 
 if t.TYPE_CHECKING:  # pragma: no cover
-    import typing_extensions as te
-
     from .app import Flask
-    from .wrappers import Request
-    from .wrappers import Response
+    from .wrappers import Request, Response
 
 
-class SessionMixin(MutableMapping[str, t.Any]):
+class SessionMixin(MutableMapping):
     """Expands a basic dictionary with session attributes."""
 
     @property
@@ -49,7 +45,7 @@ class SessionMixin(MutableMapping[str, t.Any]):
     accessed = True
 
 
-class SecureCookieSession(CallbackDict[str, t.Any], SessionMixin):
+class SecureCookieSession(CallbackDict, SessionMixin):
     """Base class for sessions based on signed cookies.
 
     This session backend will set the :attr:`modified` and
@@ -71,11 +67,8 @@ class SecureCookieSession(CallbackDict[str, t.Any], SessionMixin):
     #: different users.
     accessed = False
 
-    def __init__(
-        self,
-        initial: c.Mapping[str, t.Any] | c.Iterable[tuple[str, t.Any]] | None = None,
-    ) -> None:
-        def on_update(self: te.Self) -> None:
+    def __init__(self, initial: t.Any = None) -> None:
+        def on_update(self) -> None:
             self.modified = True
             self.accessed = True
 
@@ -184,7 +177,7 @@ class SessionInterface:
 
     def get_cookie_name(self, app: Flask) -> str:
         """The name of the session cookie. Uses``app.config["SESSION_COOKIE_NAME"]``."""
-        return app.config["SESSION_COOKIE_NAME"]  # type: ignore[no-any-return]
+        return app.config["SESSION_COOKIE_NAME"]
 
     def get_cookie_domain(self, app: Flask) -> str | None:
         """The value of the ``Domain`` parameter on the session cookie. If not set,
@@ -196,7 +189,8 @@ class SessionInterface:
         .. versionchanged:: 2.3
             Not set by default, does not fall back to ``SERVER_NAME``.
         """
-        return app.config["SESSION_COOKIE_DOMAIN"]  # type: ignore[no-any-return]
+        rv = app.config["SESSION_COOKIE_DOMAIN"]
+        return rv if rv else None
 
     def get_cookie_path(self, app: Flask) -> str:
         """Returns the path for which the cookie should be valid.  The
@@ -204,35 +198,27 @@ class SessionInterface:
         config var if it's set, and falls back to ``APPLICATION_ROOT`` or
         uses ``/`` if it's ``None``.
         """
-        return app.config["SESSION_COOKIE_PATH"] or app.config["APPLICATION_ROOT"]  # type: ignore[no-any-return]
+        return app.config["SESSION_COOKIE_PATH"] or app.config["APPLICATION_ROOT"]
 
     def get_cookie_httponly(self, app: Flask) -> bool:
         """Returns True if the session cookie should be httponly.  This
         currently just returns the value of the ``SESSION_COOKIE_HTTPONLY``
         config var.
         """
-        return app.config["SESSION_COOKIE_HTTPONLY"]  # type: ignore[no-any-return]
+        return app.config["SESSION_COOKIE_HTTPONLY"]
 
     def get_cookie_secure(self, app: Flask) -> bool:
         """Returns True if the cookie should be secure.  This currently
         just returns the value of the ``SESSION_COOKIE_SECURE`` setting.
         """
-        return app.config["SESSION_COOKIE_SECURE"]  # type: ignore[no-any-return]
+        return app.config["SESSION_COOKIE_SECURE"]
 
-    def get_cookie_samesite(self, app: Flask) -> str | None:
+    def get_cookie_samesite(self, app: Flask) -> str:
         """Return ``'Strict'`` or ``'Lax'`` if the cookie should use the
         ``SameSite`` attribute. This currently just returns the value of
         the :data:`SESSION_COOKIE_SAMESITE` setting.
         """
-        return app.config["SESSION_COOKIE_SAMESITE"]  # type: ignore[no-any-return]
-
-    def get_cookie_partitioned(self, app: Flask) -> bool:
-        """Returns True if the cookie should be partitioned. By default, uses
-        the value of :data:`SESSION_COOKIE_PARTITIONED`.
-
-        .. versionadded:: 3.1
-        """
-        return app.config["SESSION_COOKIE_PARTITIONED"]  # type: ignore[no-any-return]
+        return app.config["SESSION_COOKIE_SAMESITE"]
 
     def get_expiration_time(self, app: Flask, session: SessionMixin) -> datetime | None:
         """A helper method that returns an expiration date for the session
@@ -287,14 +273,6 @@ class SessionInterface:
 session_json_serializer = TaggedJSONSerializer()
 
 
-def _lazy_sha1(string: bytes = b"") -> t.Any:
-    """Don't access ``hashlib.sha1`` until runtime. FIPS builds may not include
-    SHA-1, in which case the import and use as a default would fail before the
-    developer can configure something else.
-    """
-    return hashlib.sha1(string)
-
-
 class SecureCookieSessionInterface(SessionInterface):
     """The default session interface that stores sessions in signed cookies
     through the :mod:`itsdangerous` module.
@@ -304,7 +282,7 @@ class SecureCookieSessionInterface(SessionInterface):
     #: signing of cookie based sessions.
     salt = "cookie-session"
     #: the hash function to use for the signature.  The default is sha1
-    digest_method = staticmethod(_lazy_sha1)
+    digest_method = staticmethod(hashlib.sha1)
     #: the name of the itsdangerous supported key derivation.  The default
     #: is hmac.
     key_derivation = "hmac"
@@ -317,20 +295,14 @@ class SecureCookieSessionInterface(SessionInterface):
     def get_signing_serializer(self, app: Flask) -> URLSafeTimedSerializer | None:
         if not app.secret_key:
             return None
-
-        keys: list[str | bytes] = [app.secret_key]
-
-        if fallbacks := app.config["SECRET_KEY_FALLBACKS"]:
-            keys.extend(fallbacks)
-
+        signer_kwargs = dict(
+            key_derivation=self.key_derivation, digest_method=self.digest_method
+        )
         return URLSafeTimedSerializer(
-            keys,  # type: ignore[arg-type]
+            app.secret_key,
             salt=self.salt,
             serializer=self.serializer,
-            signer_kwargs={
-                "key_derivation": self.key_derivation,
-                "digest_method": self.digest_method,
-            },
+            signer_kwargs=signer_kwargs,
         )
 
     def open_session(self, app: Flask, request: Request) -> SecureCookieSession | None:
@@ -354,7 +326,6 @@ class SecureCookieSessionInterface(SessionInterface):
         domain = self.get_cookie_domain(app)
         path = self.get_cookie_path(app)
         secure = self.get_cookie_secure(app)
-        partitioned = self.get_cookie_partitioned(app)
         samesite = self.get_cookie_samesite(app)
         httponly = self.get_cookie_httponly(app)
 
@@ -371,7 +342,6 @@ class SecureCookieSessionInterface(SessionInterface):
                     domain=domain,
                     path=path,
                     secure=secure,
-                    partitioned=partitioned,
                     samesite=samesite,
                     httponly=httponly,
                 )
@@ -383,16 +353,15 @@ class SecureCookieSessionInterface(SessionInterface):
             return
 
         expires = self.get_expiration_time(app, session)
-        val = self.get_signing_serializer(app).dumps(dict(session))  # type: ignore[union-attr]
+        val = self.get_signing_serializer(app).dumps(dict(session))  # type: ignore
         response.set_cookie(
             name,
-            val,
+            val,  # type: ignore
             expires=expires,
             httponly=httponly,
             domain=domain,
             path=path,
             secure=secure,
-            partitioned=partitioned,
             samesite=samesite,
         )
         response.vary.add("Cookie")

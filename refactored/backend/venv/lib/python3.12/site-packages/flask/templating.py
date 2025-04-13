@@ -17,8 +17,7 @@ from .signals import template_rendered
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from .app import Flask
-    from .sansio.app import App
-    from .sansio.scaffold import Scaffold
+    from .scaffold import Scaffold
 
 
 def _default_template_ctx_processor() -> dict[str, t.Any]:
@@ -42,7 +41,7 @@ class Environment(BaseEnvironment):
     name of the blueprint to referenced templates if necessary.
     """
 
-    def __init__(self, app: App, **options: t.Any) -> None:
+    def __init__(self, app: Flask, **options: t.Any) -> None:
         if "loader" not in options:
             options["loader"] = app.create_global_jinja_loader()
         BaseEnvironment.__init__(self, **options)
@@ -54,19 +53,19 @@ class DispatchingJinjaLoader(BaseLoader):
     the blueprint folders.
     """
 
-    def __init__(self, app: App) -> None:
+    def __init__(self, app: Flask) -> None:
         self.app = app
 
-    def get_source(
-        self, environment: BaseEnvironment, template: str
-    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
+    def get_source(  # type: ignore
+        self, environment: Environment, template: str
+    ) -> tuple[str, str | None, t.Callable | None]:
         if self.app.config["EXPLAIN_TEMPLATE_LOADING"]:
             return self._get_source_explained(environment, template)
         return self._get_source_fast(environment, template)
 
     def _get_source_explained(
-        self, environment: BaseEnvironment, template: str
-    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
+        self, environment: Environment, template: str
+    ) -> tuple[str, str | None, t.Callable | None]:
         attempts = []
         rv: tuple[str, str | None, t.Callable[[], bool] | None] | None
         trv: None | (tuple[str, str | None, t.Callable[[], bool] | None]) = None
@@ -89,8 +88,8 @@ class DispatchingJinjaLoader(BaseLoader):
         raise TemplateNotFound(template)
 
     def _get_source_fast(
-        self, environment: BaseEnvironment, template: str
-    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
+        self, environment: Environment, template: str
+    ) -> tuple[str, str | None, t.Callable | None]:
         for _srcobj, loader in self._iter_loaders(template):
             try:
                 return loader.get_source(environment, template)
@@ -98,7 +97,9 @@ class DispatchingJinjaLoader(BaseLoader):
                 continue
         raise TemplateNotFound(template)
 
-    def _iter_loaders(self, template: str) -> t.Iterator[tuple[Scaffold, BaseLoader]]:
+    def _iter_loaders(
+        self, template: str
+    ) -> t.Generator[tuple[Scaffold, BaseLoader], None, None]:
         loader = self.app.jinja_loader
         if loader is not None:
             yield self.app, loader

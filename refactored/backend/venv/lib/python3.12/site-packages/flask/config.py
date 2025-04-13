@@ -8,46 +8,27 @@ import typing as t
 
 from werkzeug.utils import import_string
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
 
-    from .sansio.app import App
-
-
-T = t.TypeVar("T")
-
-
-class ConfigAttribute(t.Generic[T]):
+class ConfigAttribute:
     """Makes an attribute forward to the config"""
 
-    def __init__(
-        self, name: str, get_converter: t.Callable[[t.Any], T] | None = None
-    ) -> None:
+    def __init__(self, name: str, get_converter: t.Callable | None = None) -> None:
         self.__name__ = name
         self.get_converter = get_converter
 
-    @t.overload
-    def __get__(self, obj: None, owner: None) -> te.Self: ...
-
-    @t.overload
-    def __get__(self, obj: App, owner: type[App]) -> T: ...
-
-    def __get__(self, obj: App | None, owner: type[App] | None = None) -> T | te.Self:
+    def __get__(self, obj: t.Any, owner: t.Any = None) -> t.Any:
         if obj is None:
             return self
-
         rv = obj.config[self.__name__]
-
         if self.get_converter is not None:
             rv = self.get_converter(rv)
+        return rv
 
-        return rv  # type: ignore[no-any-return]
-
-    def __set__(self, obj: App, value: t.Any) -> None:
+    def __set__(self, obj: t.Any, value: t.Any) -> None:
         obj.config[self.__name__] = value
 
 
-class Config(dict):  # type: ignore[type-arg]
+class Config(dict):
     """Works exactly like a dict but provides ways to fill it from files
     or special dictionaries.  There are two common patterns to populate the
     config.
@@ -92,9 +73,7 @@ class Config(dict):  # type: ignore[type-arg]
     """
 
     def __init__(
-        self,
-        root_path: str | os.PathLike[str],
-        defaults: dict[str, t.Any] | None = None,
+        self, root_path: str | os.PathLike, defaults: dict | None = None
     ) -> None:
         super().__init__(defaults or {})
         self.root_path = root_path
@@ -150,19 +129,22 @@ class Config(dict):  # type: ignore[type-arg]
         .. versionadded:: 2.1
         """
         prefix = f"{prefix}_"
+        len_prefix = len(prefix)
 
         for key in sorted(os.environ):
             if not key.startswith(prefix):
                 continue
 
             value = os.environ[key]
-            key = key.removeprefix(prefix)
 
             try:
                 value = loads(value)
             except Exception:
                 # Keep the value as a string if loading failed.
                 pass
+
+            # Change to key.removeprefix(prefix) on Python >= 3.9.
+            key = key[len_prefix:]
 
             if "__" not in key:
                 # A non-nested key, set directly.
@@ -184,9 +166,7 @@ class Config(dict):  # type: ignore[type-arg]
 
         return True
 
-    def from_pyfile(
-        self, filename: str | os.PathLike[str], silent: bool = False
-    ) -> bool:
+    def from_pyfile(self, filename: str | os.PathLike, silent: bool = False) -> bool:
         """Updates the values in the config from a Python file.  This function
         behaves as if the file was imported as module with the
         :meth:`from_object` function.
@@ -255,8 +235,8 @@ class Config(dict):  # type: ignore[type-arg]
 
     def from_file(
         self,
-        filename: str | os.PathLike[str],
-        load: t.Callable[[t.IO[t.Any]], t.Mapping[str, t.Any]],
+        filename: str | os.PathLike,
+        load: t.Callable[[t.IO[t.Any]], t.Mapping],
         silent: bool = False,
         text: bool = True,
     ) -> bool:

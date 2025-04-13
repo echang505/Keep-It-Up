@@ -3,7 +3,8 @@ import SaveScoreForm from './SaveScoreForm';
 import bliss from '../assets/sprites/bliss.png';
 
 function GameOverScreen({ setGameStatus, score }) {
-    const [saveScreenStatus, setSaveScreenStatus] = React.useState(false);
+    const [showSaveForm, setShowSaveForm] = React.useState(false);
+    
     return (
         <div
             style={{
@@ -56,7 +57,7 @@ function GameOverScreen({ setGameStatus, score }) {
 
                 <button
                     onClick={() => {
-                        setSaveScreenStatus(true);
+                        setShowSaveForm(true);
                     }}
                     style={{
                         fontSize: '2rem',
@@ -70,8 +71,7 @@ function GameOverScreen({ setGameStatus, score }) {
                 >
                     Save Score
                 </button>
-                {saveScreenStatus? <> <SaveScoreForm score={score}/>
-                </>: <></>}
+                
                 <button
                     onClick={() => {
                         setGameStatus("game-screen");
@@ -89,7 +89,6 @@ function GameOverScreen({ setGameStatus, score }) {
                     Play Again
                 </button>            
 
-
                 <button
                     onClick={() => {
                         setGameStatus("start-screen");
@@ -106,6 +105,13 @@ function GameOverScreen({ setGameStatus, score }) {
                 >
                     Return to Main Menu
                 </button>
+                
+                {showSaveForm && (
+                    <SaveScoreForm 
+                        score={score} 
+                        onClose={() => setShowSaveForm(false)} 
+                    />
+                )}
             </div>
         </div>
     );

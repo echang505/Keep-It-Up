@@ -1,6 +1,6 @@
 import React from 'react';
 
-function StartScreen({setGameStatus}) {
+function StartScreen({ setGameStatus }) {
   console.log("StartScreen");
   return (
     <div
@@ -19,7 +19,8 @@ function StartScreen({setGameStatus}) {
 
       <button
         onClick={() => {
-            setGameStatus("game-screen");}}
+          setGameStatus("game-screen");
+        }}
         style={{
           fontSize: '2rem',
           padding: '10px 30px',

@@ -14,7 +14,9 @@ function App() {
   // "settings-screen": settings screen
   // "game-over-screen": game over screen
   const [gameStatus, setGameStatus] = React.useState("start-screen");
-  
+  const [score, setScore] = React.useState(0); 
+  const currentScoreRef = React.useRef(0); 
+
   let content;
   if (gameStatus === "start-screen") {
     content = (
@@ -27,8 +29,11 @@ function App() {
       <>
         <GameCanvas
           setGameStatus={setGameStatus}
+          currentScoreRef={currentScoreRef}
+          setScore={setScore}
         />
-        <ScoreMessage 
+        <ScoreMessage
+            score={score} 
           />
       </>
     );
@@ -38,6 +43,7 @@ function App() {
         
         <GameOverScreen 
           setGameStatus={setGameStatus}
+          score={score}
           />
       </>
     );

@@ -88,6 +88,28 @@ function GameCanvas() {
         x += vx;
         y += vy;
         vy += 0.05; // gravity
+
+        // Wall collision detection and bouncing
+        const dampening = 0.7; // Reduces velocity on bounce
+        const ballRadius = 25;
+
+        // Right and left wall bouncing
+        if (x + ballRadius > window.innerWidth) {
+          x = window.innerWidth - ballRadius;
+          vx = -vx * dampening;
+        } else if (x - ballRadius < 0) {
+          x = ballRadius;
+          vx = -vx * dampening;
+        }
+
+        // Floor and ceiling bouncing
+        if (y + ballRadius > window.innerHeight) {
+          y = window.innerHeight - ballRadius;
+          vy = -vy * dampening;
+        } else if (y - ballRadius < 0) {
+          y = ballRadius;
+          vy = -vy * dampening;
+        }
         
         const dx = fingerRef.current.x - x;
         const dy = fingerRef.current.y - y;
